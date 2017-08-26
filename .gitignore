@@ -90,4 +90,5 @@ ENV/
 
 # Rope project settings
 .ropeproject
->>>>>>> 7213c66e005393ccd0c12dc75e0765ba138b1b82
+
+*.npy
