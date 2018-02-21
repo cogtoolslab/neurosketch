@@ -175,11 +175,13 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                 ## add prediction probabilities to metadata matrix
                 ## must sort so that trained are first, and control is last
                 cats = list(clf.classes_)
-                t1_index = cats.index(trained_objs[0]) ## this is not always the target
-                t2_index = cats.index(trained_objs[1]) ## this is not always the target
-                c1_index = cats.index(control_objs[0])
-                c2_index = cats.index(control_objs[1])
-                ordering = np.argsort([t1_index, t2_index, c1_index, c2_index])
+                #t1_index = cats.index(trained_objs[0]) ## this is not always the target
+                #t2_index = cats.index(trained_objs[1]) ## this is not always the target
+                #c1_index = cats.index(control_objs[0])
+                #c2_index = cats.index(control_objs[1])
+                #ordering = [t1_index, t2_index, c1_index, c2_index] ## do NOT apply np.argsort to this
+                
+                ordering = np.argsort(np.hstack((trained_objs,control_objs)))
                 probs = clf.predict_proba(X_test)[:,ordering]
                 logprobs = np.log(clf.predict_proba(X_test)[:,ordering])
 
@@ -223,7 +225,7 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                     ctrl_index = cats.index([c for c in control_objs if c != ctrl][0])
                     t1_index = cats.index(trained_objs[0]) ## this is not always the target
                     t2_index = cats.index(trained_objs[1]) ## this is not always the target
-                    ordering = np.argsort([t1_index, t2_index, ctrl_index])
+                    ordering = [t1_index, t2_index, ctrl_index]
                     probs.append(clf.predict_proba(X_test)[:,ordering])
                     logprobs.append(np.log(clf.predict_proba(X_test)[:,ordering]))
 
@@ -264,10 +266,7 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                 ## add prediction probabilities to metadata matrix
                 ## must sort so that trained are first, and control is last
                 cats = list(clf.classes_)
-                t1_index = cats.index(trained_objs[0]) ## this is not always the target
-                t2_index = cats.index(trained_objs[1]) ## this is not always the target
-                ordering = np.argsort([t1_index, t2_index])
-
+                ordering = np.argsort(trained_objs)                
                 probs = clf.predict_proba(X_test)[:,ordering]
                 logprobs = np.log(clf.predict_proba(X_test)[:,ordering])
 
