@@ -5,7 +5,7 @@ import numpy as np
 from sklearn import linear_model, datasets, neighbors
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn import svm
-
+import seaborn as sns
 
 ###############################################################################################
 ################### HELPERS FOR predict_obj_during_drawing_from_recog_runs notebook ###########
@@ -17,6 +17,10 @@ from sklearn import svm
 path_to_recog = '/home/jefan/neurosketch/neurosketch_voxelmat_freesurfer_recog'
 path_to_draw = '/home/jefan/neurosketch/neurosketch_voxelmat_freesurfer_drawing'
 roi_list = np.array(['V1','V2','LOC','IT','fusiform','parahippo', 'PRC', 'ento','hipp','mOFC'])
+
+## general plotting params
+sns.set_context('poster')
+colors = sns.color_palette("cubehelix", 5)
 
 #### Helper data loader functions
 def load_draw_meta(this_sub):
@@ -109,7 +113,6 @@ def make_drawing_predictions(sub_list,roi_list,version='4way'):
         print(this_roi)
         acc = []
         for this_sub in sub_list:
-            print(this_sub)
             ## load subject data in
             RM12, RF12 = load_recog_data(this_sub,this_roi,'12')
             RM34, RF34 = load_recog_data(this_sub,this_roi,'34')
@@ -204,7 +207,7 @@ def make_drawing_predictions(sub_list,roi_list,version='4way'):
             elif version=='2way':
 
                 ## subset recognition data matrices to only include the trained classes
-                inds = RM.label.isin(control_objs)
+                inds = RM.label.isin(trained_objs)
                 _RM = RM[inds]
 
                 ## normalize voxels within task
@@ -248,11 +251,71 @@ def make_drawing_predictions(sub_list,roi_list,version='4way'):
                 ALLDM = pd.concat([ALLDM,DM],ignore_index=True)
 
             acc.append(clf.score(X_test, y_test))
+            
+            
+            '''
+            ## plot probability timecourse by run number
+            fig = plt.figure(figsize=(5,5))
+            iv = 'run_num'
+            t,f,c = get_prob_timecourse(iv,DM)
+            plt.plot(t,color=colors[0],label='target')
+            plt.plot(f,color=colors[1],label='foil')
+            plt.plot(c,color=colors[2],label='control')
+            plt.legend(bbox_to_anchor=(1.45, 1.01))
+            plt.ylim(0,1)
+            plt.xlabel(iv)
+            plt.ylabel('probability')
+            if not os.path.exists('./plots/subj'):
+                os.makedirs('./plots/subj')
+            plt.tight_layout()
+            plt.savefig('./plots/subj/{}_{}_prob_{}.pdf'.format(iv.split('_')[0],this_roi,this_sub))
+            plt.close(fig)  
+            '''                        
 
         Acc.append(acc)
 
     return ALLDM, Acc
 
+
+## plotting helper
+def get_prob_timecourse(iv,DM,version='4way'):
+    trained_objs = np.unique(DM.label.values)
+    control_objs = [i for i in ['bed','bench','chair','table'] if i not in trained_objs]    
+    
+    if version=='4way':
+        t1 = trained_objs[0]
+        t2 = trained_objs[1]
+        c1 = control_objs[0]
+        c2 = control_objs[1]
+        target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse
+        foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
+        control = np.vstack((DM[DM.label==t1].groupby(iv)['c1_prob'].mean().values,
+                            DM[DM.label==t1].groupby(iv)['c2_prob'].mean().values,
+                            DM[DM.label==t2].groupby(iv)['c1_prob'].mean().values,
+                            DM[DM.label==t2].groupby(iv)['c2_prob'].mean().values)).mean(0) ## control timecourse    
+    elif version=='3way':
+        t1 = trained_objs[0]
+        t2 = trained_objs[1]
+        target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse
+        foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
+        control = np.vstack((DM[DM.label==t1].groupby(iv)['c_prob'].mean().values,
+                            DM[DM.label==t2].groupby(iv)['c_prob'].mean().values)).mean(0) ## control timecourse
+        
+    elif version=='2way':
+        t1 = trained_objs[0]
+        t2 = trained_objs[1]
+        target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse; mean is taken over what?
+        foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
+        
+        control = np.zeros(len(foil))        
+        
+    return target, foil, control
 
 
 ###############################################################################################
