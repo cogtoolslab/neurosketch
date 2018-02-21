@@ -1,52 +1,263 @@
 import os
 import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+from sklearn import linear_model, datasets, neighbors
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn import svm
 
-def save(path, ext='png', close=True, verbose=True):
-    """Save a figure from pyplot.
-    Parameters
-    ----------
-    path : string
-        The path (and filename, without the extension) to save the
-        figure to.
-    ext : string (default='png')
-        The file extension. This must be supported by the active
-        matplotlib backend (see matplotlib.backends module).  Most
-        backends support 'png', 'pdf', 'ps', 'eps', and 'svg'.
-    close : boolean (default=True)
-        Whether to close the figure after saving.  If you want to save
-        the figure multiple times (e.g., to multiple formats), you
-        should NOT close it in between saves or you will have to
-        re-plot it.
-    verbose : boolean (default=True)
-        Whether to print information about when and where the image
-        has been saved.
-    """
+
+###############################################################################################
+################### HELPERS FOR predict_obj_during_drawing_from_recog_runs notebook ###########
+###############################################################################################
+
+### globals
+
+## define path to input datasets (tidy format)
+path_to_recog = '/home/jefan/neurosketch/neurosketch_voxelmat_freesurfer_recog'
+path_to_draw = '/home/jefan/neurosketch/neurosketch_voxelmat_freesurfer_drawing'
+roi_list = np.array(['V1','V2','LOC','IT','fusiform','parahippo', 'PRC', 'ento','hipp','mOFC'])
+
+#### Helper data loader functions
+def load_draw_meta(this_sub):
+    this_file = 'metadata_{}_drawing.csv'.format(this_sub)
+    x = pd.read_csv(os.path.join(path_to_draw,this_file))
+    x = x.drop(['Unnamed: 0', 'Unnamed: 0.1'], axis=1)
+    x['trial_num'] = np.repeat(np.arange(40),23)        
+    return x
     
-    # Extract the directory and filename from the given path
-    directory = os.path.split(path)[0]
-    filename = "%s.%s" % (os.path.split(path)[1], ext)
-    if directory == '':
-        directory = '.'
+def load_draw_feats(this_sub,this_roi):
+    this_file = '{}_{}_featurematrix.npy'.format(this_sub,this_roi)
+    y = np.load(os.path.join(path_to_draw,this_file))
+    y = y.transpose()
+    return y
 
-    # If the directory does not exist, create it
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+def load_draw_data(this_sub,this_roi):
+    x = load_draw_meta(this_sub)
+    y = load_draw_feats(this_sub,this_roi)
+    assert y.shape[0] == x.shape[0]    
+    return x,y
 
-    # The final path to save to
-    savepath = os.path.join(directory, filename)
-
-    if verbose:
-        print("Saving figure to '%s'..." % savepath),
-
-    # Actually save the figure
-    plt.savefig(savepath,bbox_inches='tight')
+def load_recog_meta(this_sub,this_roi,this_phase):
+    this_file = 'metadata_{}_{}_{}.csv'.format(this_sub,this_roi,this_phase)
+    x = pd.read_csv(os.path.join(path_to_recog,this_file))
+    x = x.drop(['Unnamed: 0'], axis=1)
+    return x
     
-    # Close it
-    if close:
-        plt.close()
+def load_recog_feats(this_sub,this_roi,this_phase):
+    this_file = '{}_{}_{}_featurematrix.npy'.format(this_sub,this_roi,this_phase)
+    y = np.load(os.path.join(path_to_recog,this_file))
+    y = y.transpose()
+    return y    
 
-    if verbose:
-        print("Done")
+def load_recog_data(this_sub,this_roi,this_phase):
+    x = load_recog_meta(this_sub,this_roi,this_phase)
+    y = load_recog_feats(this_sub,this_roi,this_phase)
+    assert y.shape[0] == x.shape[0]    
+    return x,y
+
+# z-score normalization to de-mean & standardize variances within-voxel 
+def normalize(X):
+    X = X - X.mean(0)
+    X = X / np.maximum(X.std(0), 1e-5)
+    return X
+
+## plotting helper
+def get_prob_timecourse(iv,DM):
+    trained_objs = np.unique(DM.label.values)
+    control_objs = [i for i in ['bed','bench','chair','table'] if i not in trained_objs]
+    t1 = trained_objs[0]
+    t2 = trained_objs[1]
+    c1 = control_objs[0]
+    c2 = control_objs[1]
+    target = np.vstack((DM[DM.label==t1].groupby(iv)['{}_prob'.format(t1)].mean().values,
+                   DM[DM.label==t2].groupby(iv)['{}_prob'.format(t2)].mean().values)).mean(0) ## target timecourse
+    foil = np.vstack((DM[DM.label==t1].groupby(iv)['{}_prob'.format(t2)].mean().values,
+                   DM[DM.label==t2].groupby(iv)['{}_prob'.format(t1)].mean().values)).mean(0) ## foil timecourse
+    control = np.vstack((DM[DM.label==t1].groupby(iv)['{}_prob'.format(c1)].mean().values,
+                        DM[DM.label==t1].groupby(iv)['{}_prob'.format(c2)].mean().values,
+                        DM[DM.label==t2].groupby(iv)['{}_prob'.format(c1)].mean().values,
+                        DM[DM.label==t2].groupby(iv)['{}_prob'.format(c2)].mean().values)).mean(0) ## control timecourse
+    
+    return target, foil, control
+     
+def flatten(x):
+    return [item for sublist in x for item in sublist]    
+
+
+def make_drawing_predictions(sub_list,roi_list,version='4way'):
+    '''
+    input:
+        sub_list: a list containing subject IDs
+        roi_list: a list containing roi names
+        version: a string from options: ['4way','3way','2way']
+            4way: trains to discriminate all four objects from recognition runs
+            3way: subsamples one of the control objects, trains 3-way classifier
+                    that outputs probabilities for target, foil, and control objects
+                    that is then aggregated across classifiers
+            2way: trains to discriminate only the two trained objects from recognition runs
+                    then makes predictions on drawing data
+                    
+    assumes: that you have directories containing recognition run and drawing run data, consisting of paired .npy 
+                voxel matrices and .csv metadata matrices
+    '''
+
+    ALLDM = []
+    ## loop through all subjects and rois
+    Acc = []
+    for this_roi in roi_list:
+        print(this_roi)
+        acc = []
+        for this_sub in sub_list:
+            print(this_sub)
+            ## load subject data in
+            RM12, RF12 = load_recog_data(this_sub,this_roi,'12')
+            RM34, RF34 = load_recog_data(this_sub,this_roi,'34')
+            RM = pd.concat([RM12,RM34])
+            RF = np.vstack((RF12,RF34))
+            DM, DF = load_draw_data(this_sub,this_roi)
+            assert RF.shape[1]==DF.shape[1] ## that number of voxels is identical
+
+            # identify control objects;
+            # we wil train one classifier with
+            trained_objs = np.unique(DM.label.values)
+            control_objs = [i for i in ['bed','bench','chair','table'] if i not in trained_objs]
+            probs = []
+            logprobs = []
+
+            if version=='4way':
+                ## normalize voxels within task
+                normalize_on = 1
+                if normalize_on:
+                    _RF = normalize(RF)
+                    _DF = normalize(DF)
+                else:
+                    _RF = RF
+                    _DF = DF
+
+                # single train/test split
+                X_train = _RF
+                y_train = RM.label.values
+
+                X_test = _DF
+                y_test = DM.label.values
+                clf = linear_model.LogisticRegression(penalty='l2',C=1).fit(X_train, y_train)
+
+                ## add prediction probabilities to metadata matrix
+                cats = clf.classes_
+                probs = clf.predict_proba(X_test)
+
+                ## add prediction probabilities to metadata matrix
+                ## must sort so that trained are first, and control is last
+                cats = list(clf.classes_)
+                t1_index = cats.index(trained_objs[0]) ## this is not always the target
+                t2_index = cats.index(trained_objs[1]) ## this is not always the target
+                c1_index = cats.index(control_objs[0])
+                c2_index = cats.index(control_objs[1])
+                ordering = np.argsort([t1_index, t2_index, c1_index, c2_index])
+                probs = clf.predict_proba(X_test)[:,ordering]
+                logprobs = np.log(clf.predict_proba(X_test)[:,ordering])
+
+                DM['t1_prob'] = logprobs[:,0]
+                DM['t2_prob'] = logprobs[:,1]
+                DM['c1_prob'] = logprobs[:,2]
+                DM['c2_prob'] = logprobs[:,3]
+
+            elif version=='3way':
+
+                for ctrl in control_objs:
+
+                    inds = RM.label != ctrl
+                    _RM = RM[inds]
+
+                    ## normalize voxels within task
+                    normalize_on = 1
+                    if normalize_on:
+                        _RF = normalize(RF[inds,:])
+                        _DF = normalize(DF)
+                    else:
+                        _RF = RF[inds,:]
+                        _DF = DF
+
+                    # single train/test split
+                    X_train = _RF # recognition run feature set
+                    y_train = _RM.label.values # list of labels for the training set
+
+                    X_test = _DF
+                    y_test = DM.label.values
+                    clf = linear_model.LogisticRegression(penalty='l2',C=1).fit(X_train, y_train)
+
+                    ## add prediction probabilities to metadata matrix
+                    ## must sort so that trained are first, and control is last
+                    cats = list(clf.classes_)
+                    ctrl_index = cats.index([c for c in control_objs if c != ctrl][0])
+                    t1_index = cats.index(trained_objs[0]) ## this is not always the target
+                    t2_index = cats.index(trained_objs[1]) ## this is not always the target
+                    ordering = np.argsort([t1_index, t2_index, ctrl_index])
+                    probs.append(clf.predict_proba(X_test)[:,ordering])
+                    logprobs.append(np.log(clf.predict_proba(X_test)[:,ordering]))
+
+                DM['t1_prob'] = (logprobs[0][:,0] + logprobs[1][:,0])/2.0
+                DM['t2_prob'] = (logprobs[0][:,1] + logprobs[1][:,1])/2.0
+                DM['c_prob'] = (logprobs[0][:,2] + logprobs[1][:,2])/2.0
+
+            elif version=='2way':
+
+                ## subset recognition data matrices to only include the trained classes
+                inds = RM.label.isin(control_objs)
+                _RM = RM[inds]
+
+                ## normalize voxels within task
+                normalize_on = 1
+                if normalize_on:
+                    _RF = normalize(RF[inds,:])
+                    _DF = normalize(DF)
+                else:
+                    _RF = RF[inds,:]
+                    _DF = DF
+
+                # single train/test split
+                X_train = _RF # recognition run feature set
+                y_train = _RM.label.values # list of labels for the training set
+
+                X_test = _DF
+                y_test = DM.label.values
+                clf = linear_model.LogisticRegression(penalty='l2',C=1).fit(X_train, y_train)
+
+                probs = clf.predict_proba(X_test)
+
+                ## add prediction probabilities to metadata matrix
+                ## must sort so that trained are first, and control is last
+                cats = list(clf.classes_)
+                t1_index = cats.index(trained_objs[0]) ## this is not always the target
+                t2_index = cats.index(trained_objs[1]) ## this is not always the target
+                ordering = np.argsort([t1_index, t2_index])
+
+                probs = clf.predict_proba(X_test)[:,ordering]
+                logprobs = np.log(clf.predict_proba(X_test)[:,ordering])
+
+                DM['t1_prob'] = logprobs[:,0]
+                DM['t2_prob'] = logprobs[:,1]
+
+            DM['subj'] = np.repeat(this_sub,DM.shape[0])
+            DM['roi'] = np.repeat(this_roi,DM.shape[0])
+
+            if len(ALLDM)==0:
+                ALLDM = DM
+            else:
+                ALLDM = pd.concat([ALLDM,DM],ignore_index=True)
+
+            acc.append(clf.score(X_test, y_test))
+
+        Acc.append(acc)
+
+    return ALLDM, Acc
+
+
+
+###############################################################################################
+################### HELPERS FOR prepost RSA analyses ##########################################
+###############################################################################################
 
 def get_object_index(morphline,morphnum):
     furniture_axes = ['bedChair', 'bedTable', 'benchBed', 'chairBench', 'chairTable', 'tableBench']
