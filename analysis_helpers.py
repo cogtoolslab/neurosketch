@@ -67,29 +67,50 @@ def normalize(X):
     return X
 
 ## plotting helper
-def get_prob_timecourse(iv,DM):
+def get_prob_timecourse(iv,DM,version='4way'):
     trained_objs = np.unique(DM.label.values)
-    control_objs = [i for i in ['bed','bench','chair','table'] if i not in trained_objs]
-    t1 = trained_objs[0]
-    t2 = trained_objs[1]
-    c1 = control_objs[0]
-    c2 = control_objs[1]
-    target = np.vstack((DM[DM.label==t1].groupby(iv)['{}_prob'.format(t1)].mean().values,
-                   DM[DM.label==t2].groupby(iv)['{}_prob'.format(t2)].mean().values)).mean(0) ## target timecourse
-    foil = np.vstack((DM[DM.label==t1].groupby(iv)['{}_prob'.format(t2)].mean().values,
-                   DM[DM.label==t2].groupby(iv)['{}_prob'.format(t1)].mean().values)).mean(0) ## foil timecourse
-    control = np.vstack((DM[DM.label==t1].groupby(iv)['{}_prob'.format(c1)].mean().values,
-                        DM[DM.label==t1].groupby(iv)['{}_prob'.format(c2)].mean().values,
-                        DM[DM.label==t2].groupby(iv)['{}_prob'.format(c1)].mean().values,
-                        DM[DM.label==t2].groupby(iv)['{}_prob'.format(c2)].mean().values)).mean(0) ## control timecourse
+    control_objs = [i for i in ['bed','bench','chair','table'] if i not in trained_objs]    
     
+    if version=='4way':
+        t1 = trained_objs[0]
+        t2 = trained_objs[1]
+        c1 = control_objs[0]
+        c2 = control_objs[1]
+        target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse
+        foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
+        control = np.vstack((DM[DM.label==t1].groupby(iv)['c1_prob'].mean().values,
+                            DM[DM.label==t1].groupby(iv)['c2_prob'].mean().values,
+                            DM[DM.label==t2].groupby(iv)['c1_prob'].mean().values,
+                            DM[DM.label==t2].groupby(iv)['c2_prob'].mean().values)).mean(0) ## control timecourse    
+    elif version=='3way':
+        t1 = trained_objs[0]
+        t2 = trained_objs[1]
+        target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse; mean is taken over what?
+        foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
+        control = np.vstack((DM[DM.label==t1].groupby(iv)['c_prob'].mean().values,
+                            DM[DM.label==t2].groupby(iv)['c_prob'].mean().values)).mean(0) ## control timecourse
+        
+    elif version=='2way':
+        t1 = trained_objs[0]
+        t2 = trained_objs[1]
+        target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse; mean is taken over what?
+        foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
+        
+        control = np.zeros(len(foil))        
+        
     return target, foil, control
      
 def flatten(x):
     return [item for sublist in x for item in sublist]    
 
 
-def make_drawing_predictions(sub_list,roi_list,version='4way'):
+def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
     '''
     input:
         sub_list: a list containing subject IDs
@@ -101,6 +122,7 @@ def make_drawing_predictions(sub_list,roi_list,version='4way'):
                     that is then aggregated across classifiers
             2way: trains to discriminate only the two trained objects from recognition runs
                     then makes predictions on drawing data
+        logged: boolean. If true, return log-probabilities. If false, return raw probabilities.
                     
     assumes: that you have directories containing recognition run and drawing run data, consisting of paired .npy 
                 voxel matrices and .csv metadata matrices
@@ -161,10 +183,15 @@ def make_drawing_predictions(sub_list,roi_list,version='4way'):
                 probs = clf.predict_proba(X_test)[:,ordering]
                 logprobs = np.log(clf.predict_proba(X_test)[:,ordering])
 
-                DM['t1_prob'] = logprobs[:,0]
-                DM['t2_prob'] = logprobs[:,1]
-                DM['c1_prob'] = logprobs[:,2]
-                DM['c2_prob'] = logprobs[:,3]
+                if logged==True:
+                    out = logprobs
+                else:
+                    out = probs
+                
+                DM['t1_prob'] = out[:,0]
+                DM['t2_prob'] = out[:,1]
+                DM['c1_prob'] = out[:,2]
+                DM['c2_prob'] = out[:,3]
 
             elif version=='3way':
 
@@ -200,9 +227,14 @@ def make_drawing_predictions(sub_list,roi_list,version='4way'):
                     probs.append(clf.predict_proba(X_test)[:,ordering])
                     logprobs.append(np.log(clf.predict_proba(X_test)[:,ordering]))
 
-                DM['t1_prob'] = (logprobs[0][:,0] + logprobs[1][:,0])/2.0
-                DM['t2_prob'] = (logprobs[0][:,1] + logprobs[1][:,1])/2.0
-                DM['c_prob'] = (logprobs[0][:,2] + logprobs[1][:,2])/2.0
+                if logged==True:
+                    out = logprobs
+                else:
+                    out = probs                    
+                    
+                DM['t1_prob'] = (out[0][:,0] + out[1][:,0])/2.0
+                DM['t2_prob'] = (out[0][:,1] + out[1][:,1])/2.0
+                DM['c_prob'] = (out[0][:,2] + out[1][:,2])/2.0
 
             elif version=='2way':
 
@@ -239,8 +271,13 @@ def make_drawing_predictions(sub_list,roi_list,version='4way'):
                 probs = clf.predict_proba(X_test)[:,ordering]
                 logprobs = np.log(clf.predict_proba(X_test)[:,ordering])
 
-                DM['t1_prob'] = logprobs[:,0]
-                DM['t2_prob'] = logprobs[:,1]
+                if logged==True:
+                    out = logprobs
+                else:
+                    out = probs                    
+                                                    
+                DM['t1_prob'] = out[:,0]
+                DM['t2_prob'] = out[:,1]
 
             DM['subj'] = np.repeat(this_sub,DM.shape[0])
             DM['roi'] = np.repeat(this_roi,DM.shape[0])
