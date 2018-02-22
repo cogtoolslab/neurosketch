@@ -66,6 +66,24 @@ def normalize(X):
     X = X / np.maximum(X.std(0), 1e-5)
     return X
 
+def bootstrapCI(x,nIter):
+    '''
+    input: x is an array
+    '''
+    u = []
+    for i in np.arange(nIter):
+        inds = np.random.RandomState(i).choice(len(x),len(x))
+        boot = x[inds]
+        u.append(np.mean(boot))
+        
+    p1 = len([i for i in u if i<0])/len(u) * 2
+    p2 = len([i for i in u if i>0])/len(u) * 2
+    p = np.min([p1,p2])
+    U = np.mean(u)
+    lb = np.percentile(u,2.5)
+    ub = np.percentile(u,97.5)    
+    return U,lb,ub,p
+
 ## plotting helper
 def get_prob_timecourse(iv,DM,version='4way'):
     trained_objs = np.unique(DM.label.values)
@@ -109,6 +127,10 @@ def get_prob_timecourse(iv,DM,version='4way'):
 def flatten(x):
     return [item for sublist in x for item in sublist]    
 
+def cleanup_df(df):    
+    surplus = [i for i in df.columns if 'Unnamed' in i]
+    df = df.drop(surplus,axis=1)
+    return df
 
 def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
     '''
@@ -174,26 +196,31 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
 
                 ## add prediction probabilities to metadata matrix
                 ## must sort so that trained are first, and control is last
-                cats = list(clf.classes_)
-                #t1_index = cats.index(trained_objs[0]) ## this is not always the target
-                #t2_index = cats.index(trained_objs[1]) ## this is not always the target
-                #c1_index = cats.index(control_objs[0])
-                #c2_index = cats.index(control_objs[1])
-                #ordering = [t1_index, t2_index, c1_index, c2_index] ## do NOT apply np.argsort to this
-                
-                ordering = np.argsort(np.hstack((trained_objs,control_objs)))
-                probs = clf.predict_proba(X_test)[:,ordering]
+                cats = list(clf.classes_)                
+                _ordering = np.argsort(np.hstack((trained_objs,control_objs))) ## e.g., [chair table bench bed] ==> [3 2 0 1]
+                ordering = np.argsort(_ordering) ## get indices that sort from alphabetical to (trained_objs, control_objs)
+                probs = clf.predict_proba(X_test)[:,ordering] ## [table chair bed bench] 
                 logprobs = np.log(clf.predict_proba(X_test)[:,ordering])
 
                 if logged==True:
                     out = logprobs
                 else:
                     out = probs
-                
+                                   
                 DM['t1_prob'] = out[:,0]
                 DM['t2_prob'] = out[:,1]
                 DM['c1_prob'] = out[:,2]
                 DM['c2_prob'] = out[:,3]
+                
+                ## also save out new columns in the same order 
+                if logged==True:
+                    probs = np.log(clf.predict_proba(X_test))
+                else:
+                    probs = clf.predict_proba(X_test)
+                DM['bed_prob'] = probs[:,0]
+                DM['bench_prob'] = probs[:,1]
+                DM['chair_prob'] = probs[:,2]
+                DM['table_prob'] = probs[:,3]                 
 
             elif version=='3way':
 
@@ -225,7 +252,7 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                     ctrl_index = cats.index([c for c in control_objs if c != ctrl][0])
                     t1_index = cats.index(trained_objs[0]) ## this is not always the target
                     t2_index = cats.index(trained_objs[1]) ## this is not always the target
-                    ordering = [t1_index, t2_index, ctrl_index]
+                    ordering = [t1_index, t2_index, ctrl_index]                    
                     probs.append(clf.predict_proba(X_test)[:,ordering])
                     logprobs.append(np.log(clf.predict_proba(X_test)[:,ordering]))
 
@@ -266,7 +293,8 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                 ## add prediction probabilities to metadata matrix
                 ## must sort so that trained are first, and control is last
                 cats = list(clf.classes_)
-                ordering = np.argsort(trained_objs)                
+                _ordering = np.argsort(trained_objs)
+                ordering = np.argsort(_ordering)
                 probs = clf.predict_proba(X_test)[:,ordering]
                 logprobs = np.log(clf.predict_proba(X_test)[:,ordering])
 
