@@ -160,8 +160,10 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
             ## load subject data in
             RM12, RF12 = load_recog_data(this_sub,this_roi,'12')
             RM34, RF34 = load_recog_data(this_sub,this_roi,'34')
-            RM = pd.concat([RM12,RM34])
-            RF = np.vstack((RF12,RF34))
+            #RM = pd.concat([RM12,RM34])
+            #RF = np.vstack((RF12,RF34))
+            RM = RM12
+            RF = RF12
             DM, DF = load_draw_data(this_sub,this_roi)
             assert RF.shape[1]==DF.shape[1] ## that number of voxels is identical
 
