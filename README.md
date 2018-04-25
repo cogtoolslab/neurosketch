@@ -44,7 +44,8 @@ Note: before 4/23/18, canonical voxel matrices + metadata were in `neurosketch/d
 
 There is a master DATA dir containing all processed fMRI data in standard format:
 * `DATA/features` contains all feature matrices and metadata from all phases, ROIs, and subjects.
-	* `DATA/features/draw` contains drawing filtered func data (represented as .npy feature matrices) + corresponding metadata 
+	* `DATA/features/draw/surf` contains drawing filtered func data (represented as .npy feature matrices) + corresponding metadata from full freesurfer anatomical ROIs
+	* `DATA/features/draw/surfXdraw` contains drawing filtered func data + metadata from freesurfer ROIs intersected with drawing taskGLM group-level cope map
 	* `DATA/features/recog` contains recognition filtered func data (represented as .npy feature matrices) + corresponding metadata
 * `DATA/copes` contains all cope NIFTI files from GLM fit to recognition and drawing runs for all subjects.
 	* `DATA/copes/recog/objectGLM` recognition cope maps from object GLM
