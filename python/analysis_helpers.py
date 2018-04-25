@@ -6,6 +6,8 @@ from sklearn import linear_model, datasets, neighbors
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn import svm
 import seaborn as sns
+import nibabel as nib
+import scipy.stats as stats
 
 ###############################################################################################
 ################### HELPERS FOR predict_obj_during_drawing_from_recog_runs notebook ###########
@@ -587,3 +589,8 @@ def compare_btw_wit_cond_similarity_across_runs(this_sub,phase,roi):
     conbtw_mean = control_btwobj.mean()
     return trawit_mean,conwit_mean,trabtw_mean,conbtw_mean          
 
+def get_vectorized_voxels_from_map(filename):
+  img = nib.load(filename)
+  data = img.get_data()
+  flat = np.ravel(data)
+  return flat
