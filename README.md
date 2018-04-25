@@ -37,14 +37,16 @@ Note: before 4/23/18, canonical voxel matrices + metadata were in `neurosketch/d
 
 # List of main analysis notebooks 
 
-- Pre-Post Representational Similarity Analyses on Recognition Data
+* Pre-Post Representational Similarity Analyses on Recognition Data
+- How correlated are individual differences in prepost differentiation across different ROIs? (matrix plot)
 
-- Measure Evidence for Objects During Drawing
-	Using neural patterns from localizer recognition runs
-	Using VGG features
+* Measure Evidence for Objects During Drawing
+	- Using neural patterns from localizer recognition runs
+	- How correlated are logistic classifier predictions across different ROIs? (matrix plot)	
+	- Using VGG features
 
-- Relate Drawing and Differentiation
+* Relate Drawing and Differentiation
 
-- Measure Informational Connectivity within Drawing Regions
+* Measure Informational Connectivity within Drawing Regions
 
 
