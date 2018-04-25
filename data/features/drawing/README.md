@@ -1,0 +1,1 @@
+surfXdraw is a directory which contains the feature matrices and metadata for the voxels which are in each major freesurfer ROI and also appeared in group-level drawing GLM task map. Accordingly, it contains voxels from regions outside of the ventral stream, including parietal and frontal regions that were significantly engaged during the drawing runs.
