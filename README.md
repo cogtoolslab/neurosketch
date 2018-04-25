@@ -28,12 +28,12 @@ ROIs with ‘draw’ suffix are intersects of ROI masks and draw task mask
 All in anatomical space
 
 ## OUTPUT: 
-	For each ROI and each subject:
+	For each ROI and each subject and phase:
 voxel matrices (m timepoints x n voxels) saved as .npy
 metadata saved as .csv
 Note: before 4/23/18, canonical voxel matrices + metadata were in `neurosketch/data/neurosketch_voxelmat3mm_freesurfer_drawing`, renamed to `neurosketch/data/features/drawing`. 
 
-	Note: path on jukebox (accessible via Spock) is: `PATH/PATH/PATH`
+	Note: path on jukebox (accessible via Spock) is: `/jukebox/ntb/projects/sketchloop02/data`
 
 
 
