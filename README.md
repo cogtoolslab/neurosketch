@@ -35,15 +35,16 @@ Note: before 4/23/18, canonical voxel matrices + metadata were in `neurosketch/d
 
 	Note: path on jukebox (accessible via Spock) is: `PATH/PATH/PATH`
 
-# List of main analysis notebooks 
 
-## INPUT:
+## INPUT to analysis notebooks:
 
 * Drawing filtered func data (represented as .npy feature matrices) + corresponding metadata
 * Recognition filtered func data (represented as .npy feature matrices) + corresponding metadata
 * Recognition cope maps from object GLM
 * Drawing cope maps from drawing_task GLM
 
+# List of main analysis notebooks 
+ 
 * Pre-Post Representational Similarity Analyses on Recognition Data
 - How correlated are individual differences in prepost differentiation across different ROIs? (matrix plot)
 
