@@ -47,8 +47,8 @@ There is a master DATA dir containing all processed fMRI data in standard format
 	* `DATA/features/drawing` contains drawing filtered func data (represented as .npy feature matrices) + corresponding metadata 
 	* `DATA/features/recog` contains recognition filtered func data (represented as .npy feature matrices) + corresponding metadata
 * `DATA/copes` contains all cope NIFTI files from GLM fit to recognition and drawing runs for all subjects.
-	* `DATA/copes/objectGLM` recognition cope maps from object GLM
-	* `DATA/copes/drawGLM` drawing cope maps from drawing_task GLM
+	* `DATA/copes/recog/objectGLM` recognition cope maps from object GLM
+	* `DATA/copes/draw/taskGLM` drawing cope maps from drawing_task GLM
 
 # List of main analysis notebooks:
 * Pre-Post Representational Similarity Analyses on Recognition Data
