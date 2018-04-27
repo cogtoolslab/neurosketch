@@ -1,22 +1,18 @@
 import os
-import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-from sklearn import linear_model, datasets, neighbors
-from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn import svm
-import seaborn as sns
+from numpy import shape
+import sklearn
+from sklearn import linear_model
+from nilearn import image
+from sklearn.metrics.pairwise import pairwise_distances
 import nibabel as nib
-import scipy.stats as stats
 
 ###############################################################################################
 ################### HELPERS FOR predict_obj_during_drawing_from_recog_runs notebook ###########
 ###############################################################################################
 
-
-## general plotting params
-sns.set_context('poster')
-colors = sns.color_palette("cubehelix", 5)
+### globals
 
 #### Helper data loader functions
 def load_draw_meta(this_sub):
@@ -133,7 +129,7 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
     input:
         sub_list: a list containing subject IDs
         roi_list: a list containing roi names
-        version: a string from options: ['4way','3way','2way','2wayDraw']
+        version: a string from options: ['4way','3way','2way']
             4way: trains to discriminate all four objects from recognition runs
             3way: subsamples one of the control objects, trains 3-way classifier
                     that outputs probabilities for target, foil, and control objects
@@ -446,6 +442,16 @@ def get_prob_timecourse(iv,DM,version='4way'):
 ################### HELPERS FOR prepost RSA analyses ##########################################
 ###############################################################################################
 
+mdtd = [{'near': 'suvToSmart', 'version': 0, 'far1': 'benchBed', 'trained': 'limoToSedan', 'far2': 'chairTable'}, {'near': 'suvToSmart', 'version': 1, 'far1': 'bedChair', 'trained': 'limoToSedan', 'far2': 'tableBench'}, {'near': 'suvToSmart', 'version': 2, 'far1': 'bedTable', 'trained': 'limoToSedan', 'far2': 'chairBench'}, {'near': 'suvToSedan', 'version': 3, 'far1': 'benchBed', 'trained': 'limoToSmart', 'far2': 'chairTable'}, {'near': 'suvToSedan', 'version': 4, 'far1': 'bedChair', 'trained': 'limoToSmart', 'far2': 'tableBench'}, {'near': 'suvToSedan', 'version': 5, 'far1': 'bedTable', 'trained': 'limoToSmart', 'far2': 'chairBench'}, {'near': 'smartToSedan', 'version': 6, 'far1': 'benchBed', 'trained': 'limoToSUV', 'far2': 'chairTable'}, {'near': 'smartToSedan', 'version': 7, 'far1': 'bedChair', 'trained': 'limoToSUV', 'far2': 'tableBench'}, {'near': 'smartToSedan', 'version': 8, 'far1': 'bedTable', 'trained': 'limoToSUV', 'far2': 'chairBench'}, {'near': 'limoToSUV', 'version': 9, 'far1': 'benchBed', 'trained': 'smartToSedan', 'far2': 'chairTable'}, {'near': 'limoToSUV', 'version': 10, 'far1': 'bedChair', 'trained': 'smartToSedan', 'far2': 'tableBench'}, {'near': 'limoToSUV', 'version': 11, 'far1': 'bedTable', 'trained': 'smartToSedan', 'far2': 'chairBench'}, {'near': 'limoToSmart', 'version': 12, 'far1': 'benchBed', 'trained': 'suvToSedan', 'far2': 'chairTable'}, {'near': 'limoToSmart', 'version': 13, 'far1': 'bedChair', 'trained': 'suvToSedan', 'far2': 'tableBench'}, {'near': 'limoToSmart', 'version': 14, 'far1': 'bedTable', 'trained': 'suvToSedan', 'far2': 'chairBench'}, {'near': 'limoToSedan', 'version': 15, 'far1': 'benchBed', 'trained': 'suvToSmart', 'far2': 'chairTable'}, {'near': 'limoToSedan', 'version': 16, 'far1': 'bedChair', 'trained': 'suvToSmart', 'far2': 'tableBench'}, {'near': 'limoToSedan', 'version': 17, 'far1': 'bedTable', 'trained': 'suvToSmart', 'far2': 'chairBench'}, {'near': 'chairTable', 'version': 18, 'far1': 'limoToSedan', 'trained': 'benchBed', 'far2': 'suvToSmart'}, {'near': 'chairTable', 'version': 19, 'far1': 'limoToSmart', 'trained': 'benchBed', 'far2': 'suvToSedan'}, {'near': 'chairTable', 'version': 20, 'far1': 'limoToSUV', 'trained': 'benchBed', 'far2': 'smartToSedan'}, {'near': 'tableBench', 'version': 21, 'far1': 'limoToSedan', 'trained': 'bedChair', 'far2': 'suvToSmart'}, {'near': 'tableBench', 'version': 22, 'far1': 'limoToSmart', 'trained': 'bedChair', 'far2': 'suvToSedan'}, {'near': 'tableBench', 'version': 23, 'far1': 'limoToSUV', 'trained': 'bedChair', 'far2': 'smartToSedan'}, {'near': 'chairBench', 'version': 24, 'far1': 'limoToSedan', 'trained': 'bedTable', 'far2': 'suvToSmart'}, {'near': 'chairBench', 'version': 25, 'far1': 'limoToSmart', 'trained': 'bedTable', 'far2': 'suvToSedan'}, {'near': 'chairBench', 'version': 26, 'far1': 'limoToSUV', 'trained': 'bedTable', 'far2': 'smartToSedan'}, {'near': 'bedTable', 'version': 27, 'far1': 'limoToSedan', 'trained': 'chairBench', 'far2': 'suvToSmart'}, {'near': 'bedTable', 'version': 28, 'far1': 'limoToSmart', 'trained': 'chairBench', 'far2': 'suvToSedan'}, {'near': 'bedTable', 'version': 29, 'far1': 'limoToSUV', 'trained': 'chairBench', 'far2': 'smartToSedan'}, {'near': 'bedChair', 'version': 30, 'far1': 'limoToSedan', 'trained': 'tableBench', 'far2': 'suvToSmart'}, {'near': 'bedChair', 'version': 31, 'far1': 'limoToSmart', 'trained': 'tableBench', 'far2': 'suvToSedan'}, {'near': 'bedChair', 'version': 32, 'far1': 'limoToSUV', 'trained': 'tableBench', 'far2': 'smartToSedan'}, {'near': 'benchBed', 'version': 33, 'far1': 'limoToSedan', 'trained': 'chairTable', 'far2': 'suvToSmart'}, {'near': 'benchBed', 'version': 34, 'far1': 'limoToSmart', 'trained': 'chairTable', 'far2': 'suvToSedan'}, {'near': 'benchBed', 'version': 35, 'far1': 'limoToSUV', 'trained': 'chairTable', 'far2': 'smartToSedan'}]
+
+# behavioral data from database (versionNums index each subject in mdtd)
+coll = {'0110171_neurosketch': '18', '0110172_neurosketch': '21', '0111171_neurosketch': '24', '0112171_neurosketch': '27', '0112172_neurosketch': '30', '0112173_neurosketch': '33', '0113171_neurosketch': '21', '0115172_neurosketch': '24', '0115174_neurosketch': '27', '0117171_neurosketch': '30', '0118171_neurosketch': '33', '0118172_neurosketch': '33', '0119171_neurosketch': '18', '0119172_neurosketch': '21', '0119173_neurosketch': '24', '0119174_neurosketch': '27', '0120171_neurosketch': '30', '0120172_neurosketch': '33', '0120173_neurosketch': '18', '0123171_neurosketch': '24', '0123173_neurosketch': '30', '0124171_neurosketch': '33', '0125171_neurosketch': '27', '0125172_neurosketch': '21', '1121161_neurosketch': '24', '1130161_neurosketch': '27', '1201161_neurosketch': '30', '1202161_neurosketch': '21', '1203161_neurosketch': '33', '1206161_neurosketch': '18', '1206162_neurosketch': '21', '1206163_neurosketch': '24', '1207162_neurosketch': '30'}
+
+### globals
+obj2cope = {'bed':1,'bench':2, 'chair':3,'table':4}
+roi_dir = 'DATA/copes/roi'              # path to roi .nii.gz files
+cope_dir = 'DATA/copes/recog/objectGLM' # path to hires copes
+
 def get_object_index(morphline,morphnum):
     furniture_axes = ['bedChair', 'bedTable', 'benchBed', 'chairBench', 'chairTable', 'tableBench']
     car_axes = ['limoToSUV','limoToSedan','limoToSmart','smartToSedan','suvToSedan','suvToSmart']
@@ -500,7 +506,6 @@ def getEndpoints(morphline):
     else:
         return ['A','B']
 
-
 def triple_sum(X):
     return sum(sum(sum(X)))
 
@@ -510,19 +515,13 @@ def get_mask_array(mask_path):
     num_brain_voxels = sum(sum(sum(mask_data==1)))
     return mask_data, num_brain_voxels
 
-def load_roi_mask(subj,run_num,roi):
-    mask_path = proj_dir + subj +'/analysis/firstlevel/rois/' + roi + '_func__' + str(run_num) + '_binarized.nii.gz'
-    mask_data, nv = get_mask_array(mask_path)
-    return mask_data
-
-def load_roi_mask_combined(subj,run_num,roi):
-    if run_num in [1,2]:
-        phase_num = '12'
-    elif run_num in [3,4]:
-        phase_num = '34'
-    elif run_num in [5,6]:
-        phase_num = '56'
-    mask_path = proj_dir + '/' + subj +'/analysis/firstlevel/rois/' + roi + '_func_combined_' + phase_num + '_binarized.nii.gz'
+def load_roi_mask(subj, roi):
+    if roi in ['Frontal', 'Parietal', 'supraMarginal', 'Insula', 'postCentral', 'preCentral']:
+        mask_path = os.path.join(roi_dir, subj, roi + '_draw.nii.gz')
+    elif roi in ['V1', 'V2']:
+        mask_path = os.path.join(roi_dir, subj, roi+'.nii.gz')
+    else:
+        mask_path = os.path.join(roi_dir, subj, roi + '_FS.nii.gz')
     mask_data, nv = get_mask_array(mask_path)
     return mask_data
 
@@ -534,8 +533,7 @@ def normalize(X):
     return X
 
 def load_single_run_weights(subj,run_num,cope_num):
-    nifti_path = proj_dir + '/' + subj + '/analysis/firstlevel/glm4_recognition_run_' + str(run_num) + \
-                '.feat/stats/' + 'cope' + str(cope_num) + '.nii.gz'
+    nifti_path = cope_dir + '/' + subj[:7] + '_run' + str(run_num) + '_cope' + str(cope_num) + '_hires.nii.gz'
     fmri_img = image.load_img(nifti_path)
     fmri_data = fmri_img.get_data()
     return fmri_data
@@ -544,7 +542,7 @@ def apply_mask(data,mask):
     return data[mask==1]
 
 def load_data_and_apply_mask(subj,run_num,roi,cope_num):
-    mask = load_roi_mask_combined(subj,run_num,roi)
+    mask = load_roi_mask(subj,roi)
     vol = load_single_run_weights(subj,run_num,cope_num)
     vec = apply_mask(vol,mask)
     return vec
@@ -570,13 +568,10 @@ def plot_phase_RSM(this_sub,roi,phase):
     plt.matshow(np.corrcoef(stacked))
     plt.colorbar()
 
-
 def extract_condition_by_voxel_run_mat(this_sub,run_num, roi):
-    w = this_sub
-    these = coll.find({'wID': w}).sort('trialNum')
-    versionNum = these[0]['versionNum']
+    versionNum = coll[this_sub]
 
-    design = [i for i in mdtd if i['version'] == int(versionNum)] # find which axes belong to which condition
+    design = [i for i in mdtd if i['version'] == int(versionNum)] # which axes belong to which condition?
     trained = design[0]['trained']
     near = design[0]['near']
     far1 = design[0]['far1']
@@ -613,7 +608,7 @@ def compare_btw_wit_obj_similarity_across_runs(this_sub,phase,roi):
         mat1 = extract_obj_by_voxel_run_mat(this_sub,5,roi)
         mat2 = extract_obj_by_voxel_run_mat(this_sub,6,roi)
     fAB = np.vstack((mat1,mat2)) # stack feature matrices
-    DAB = sklearn.metrics.pairwise.pairwise_distances(fAB, metric='correlation') # square matrix, where off-diagblock is distances *between* fA and fB vectors
+    DAB = pairwise_distances(fAB, metric='correlation') # square matrix, where off-diagblock is distances *between* fA and fB vectors
     offblock = DAB[:len(mat1),range(len(mat1),shape(DAB)[1])]
     wit_obj = DAB[:len(mat1),range(len(mat1),shape(DAB)[1])].diagonal()
     btw_obj = np.hstack((offblock[np.triu_indices(shape(offblock)[0],k=1)],offblock[np.tril_indices(shape(offblock)[0],k=-1)]))
@@ -622,16 +617,21 @@ def compare_btw_wit_obj_similarity_across_runs(this_sub,phase,roi):
     return wit_mean,btw_mean
 
 def compare_btw_wit_cond_similarity_across_runs(this_sub,phase,roi):
-
-    if phase=='pre':
+    if phase == 'pre':
         mat1 = extract_condition_by_voxel_run_mat(this_sub,3,roi)
         mat2 = extract_condition_by_voxel_run_mat(this_sub,4,roi)
-    elif phase=='post':
+    elif phase == 'post':
         mat1 = extract_condition_by_voxel_run_mat(this_sub,5,roi)
+        mat2 = extract_condition_by_voxel_run_mat(this_sub,6,roi)
+    elif phase == '35':
+        mat1 = extract_condition_by_voxel_run_mat(this_sub,3,roi)
+        mat2 = extract_condition_by_voxel_run_mat(this_sub,5,roi)
+    elif phase == '46':
+        mat1 = extract_condition_by_voxel_run_mat(this_sub,4,roi)
         mat2 = extract_condition_by_voxel_run_mat(this_sub,6,roi)
 
     fAB = np.vstack((mat1,mat2)) # stack feature matrices
-    DAB = sklearn.metrics.pairwise.pairwise_distances(fAB, metric='correlation') # square matrix, where off-diagblock is distances *between* fA and fB vectors
+    DAB = pairwise_distances(fAB, metric='correlation') # square matrix, where off-diagblock is distances *between* fA and fB vectors
     offblock = DAB[:len(mat1),range(len(mat1),shape(DAB)[1])]
 
     trained_witobj = offblock.diagonal()[:2]
@@ -646,7 +646,7 @@ def compare_btw_wit_cond_similarity_across_runs(this_sub,phase,roi):
     return trawit_mean,conwit_mean,trabtw_mean,conbtw_mean
 
 def get_vectorized_voxels_from_map(filename):
-  img = nib.load(filename)
-  data = img.get_data()
-  flat = np.ravel(data)
-  return flat
+    img = nib.load(filename)
+    data = img.get_data()
+    flat = np.ravel(data)
+    return flat
