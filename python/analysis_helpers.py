@@ -135,6 +135,8 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                     that is then aggregated across classifiers
             2way: trains to discriminate only the two trained objects from recognition runs
                     then makes predictions on drawing data
+            2wayDraw: trains to discriminate only the two trained objects on three drawing runs
+                      and makes predictions on the held out drawing run, for all runs
         logged: boolean. If true, return log-probabilities. If false, return raw probabilities.
 
     assumes: that you have directories containing recognition run and drawing run data, consisting of paired .npy
@@ -299,6 +301,66 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                 DM['t1_prob'] = out[:,0]
                 DM['t2_prob'] = out[:,1]
 
+            elif version=='2wayDraw':
+                INTDM = []
+                __acc = []
+                for i in range(1,5):
+                    trainrun_inds = DM.index[DM.run_num!=i]
+                    testrun_inds = DM.index[DM.run_num==i]
+                    DMtrain = DM[DM.run_num!=i]
+                    DMtest = DM[DM.run_num==i]
+                    trainrun_feats = DF[trainrun_inds,:]
+                    testrun_feats = DF[testrun_inds,:]
+
+                    ## normalize voxels within task
+                    normalize_on = 1
+                    if normalize_on:
+                        _DFtrain = normalize(trainrun_feats)
+                        _DFtest = normalize(testrun_feats)
+                    else:
+                        _DFtrain = trainrun_feats
+                        _DFtest = testrun_feats
+
+                    # single train/test split
+                    X_train = _DFtrain
+                    y_train = DMtrain.label.values
+
+                    X_test = _DFtest
+                    y_test = DMtest.label.values
+
+                    clf = linear_model.LogisticRegression(penalty='l2',C=1).fit(X_train, y_train)
+
+                    probs = clf.predict_proba(X_test)
+
+                    ## add prediction probabilities to metadata matrix
+                    ## must sort so that trained are first, and control is last
+                    cats = list(clf.classes_)
+                    _ordering = np.argsort(trained_objs)
+                    ordering = np.argsort(_ordering)
+                    probs = clf.predict_proba(X_test)[:,ordering]
+                    np.place(probs, probs==0, 2.22E-16)
+                    #logprobs = np.log(clf.predict_proba(X_test)[:,ordering])
+                    logprobs = np.log(probs)
+
+
+                    if logged==True:
+                        out = logprobs
+                    else:
+                        out = probs
+
+                    DMtest['t1_prob'] = out[:,0]
+                    DMtest['t2_prob'] = out[:,1]
+                    DMtest['subj'] = np.repeat(this_sub,DMtest.shape[0])
+                    DMtest['roi'] = np.repeat(this_roi,DMtest.shape[0])
+
+                    __acc.append(clf.score(X_test, y_test))
+                    if len(INTDM)==0:
+                        INTDM = DMtest
+                    else:
+                        INTDM = pd.concat([INTDM,DMtest],ignore_index=True)
+                DM = INTDM
+                _acc = np.mean(np.array(__acc))
+
             DM['subj'] = np.repeat(this_sub,DM.shape[0])
             DM['roi'] = np.repeat(this_roi,DM.shape[0])
 
@@ -307,7 +369,7 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
             else:
                 ALLDM = pd.concat([ALLDM,DM],ignore_index=True)
 
-            acc.append(clf.score(X_test, y_test))
+            acc.append(_acc) if version == '2wayDraw' else acc.append(clf.score(X_test, y_test))
 
 
             '''
