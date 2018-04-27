@@ -23,9 +23,9 @@ def load_draw_meta(this_sub):
     this_file = 'metadata_{}_drawing.csv'.format(this_sub)
     x = pd.read_csv(os.path.join(path_to_draw,this_file))
     x = x.drop(['Unnamed: 0', 'Unnamed: 0.1'], axis=1)
-    x['trial_num'] = np.repeat(np.arange(40),23)        
+    x['trial_num'] = np.repeat(np.arange(40),23)
     return x
-    
+
 def load_draw_feats(this_sub,this_roi):
     this_file = '{}_{}_featurematrix.npy'.format(this_sub,this_roi)
     y = np.load(os.path.join(path_to_draw,this_file))
@@ -35,7 +35,7 @@ def load_draw_feats(this_sub,this_roi):
 def load_draw_data(this_sub,this_roi):
     x = load_draw_meta(this_sub)
     y = load_draw_feats(this_sub,this_roi)
-    assert y.shape[0] == x.shape[0]    
+    assert y.shape[0] == x.shape[0]
     return x,y
 
 def load_recog_meta(this_sub,this_roi,this_phase):
@@ -43,20 +43,20 @@ def load_recog_meta(this_sub,this_roi,this_phase):
     x = pd.read_csv(os.path.join(path_to_recog,this_file))
     x = x.drop(['Unnamed: 0'], axis=1)
     return x
-    
+
 def load_recog_feats(this_sub,this_roi,this_phase):
     this_file = '{}_{}_{}_featurematrix.npy'.format(this_sub,this_roi,this_phase)
     y = np.load(os.path.join(path_to_recog,this_file))
     y = y.transpose()
-    return y    
+    return y
 
 def load_recog_data(this_sub,this_roi,this_phase):
     x = load_recog_meta(this_sub,this_roi,this_phase)
     y = load_recog_feats(this_sub,this_roi,this_phase)
-    assert y.shape[0] == x.shape[0]    
+    assert y.shape[0] == x.shape[0]
     return x,y
 
-# z-score normalization to de-mean & standardize variances within-voxel 
+# z-score normalization to de-mean & standardize variances within-voxel
 def normalize(X):
     X = X - X.mean(0)
     X = X / np.maximum(X.std(0), 1e-5)
@@ -71,20 +71,20 @@ def bootstrapCI(x,nIter):
         inds = np.random.RandomState(i).choice(len(x),len(x))
         boot = x[inds]
         u.append(np.mean(boot))
-        
+
     p1 = len([i for i in u if i<0])/len(u) * 2
     p2 = len([i for i in u if i>0])/len(u) * 2
     p = np.min([p1,p2])
     U = np.mean(u)
     lb = np.percentile(u,2.5)
-    ub = np.percentile(u,97.5)    
+    ub = np.percentile(u,97.5)
     return U,lb,ub,p
 
 ## plotting helper
 def get_prob_timecourse(iv,DM,version='4way'):
     trained_objs = np.unique(DM.label.values)
-    control_objs = [i for i in ['bed','bench','chair','table'] if i not in trained_objs]    
-    
+    control_objs = [i for i in ['bed','bench','chair','table'] if i not in trained_objs]
+
     if version=='4way':
         t1 = trained_objs[0]
         t2 = trained_objs[1]
@@ -97,7 +97,7 @@ def get_prob_timecourse(iv,DM,version='4way'):
         control = np.vstack((DM[DM.label==t1].groupby(iv)['c1_prob'].mean().values,
                             DM[DM.label==t1].groupby(iv)['c2_prob'].mean().values,
                             DM[DM.label==t2].groupby(iv)['c1_prob'].mean().values,
-                            DM[DM.label==t2].groupby(iv)['c2_prob'].mean().values)).mean(0) ## control timecourse    
+                            DM[DM.label==t2].groupby(iv)['c2_prob'].mean().values)).mean(0) ## control timecourse
     elif version=='3way':
         t1 = trained_objs[0]
         t2 = trained_objs[1]
@@ -107,7 +107,7 @@ def get_prob_timecourse(iv,DM,version='4way'):
                        DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
         control = np.vstack((DM[DM.label==t1].groupby(iv)['c_prob'].mean().values,
                             DM[DM.label==t2].groupby(iv)['c_prob'].mean().values)).mean(0) ## control timecourse
-        
+
     elif version=='2way':
         t1 = trained_objs[0]
         t2 = trained_objs[1]
@@ -115,15 +115,15 @@ def get_prob_timecourse(iv,DM,version='4way'):
                        DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse; mean is taken over what?
         foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
                        DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
-        
-        control = np.zeros(len(foil))        
-        
-    return target, foil, control
-     
-def flatten(x):
-    return [item for sublist in x for item in sublist]    
 
-def cleanup_df(df):    
+        control = np.zeros(len(foil))
+
+    return target, foil, control
+
+def flatten(x):
+    return [item for sublist in x for item in sublist]
+
+def cleanup_df(df):
     surplus = [i for i in df.columns if 'Unnamed' in i]
     df = df.drop(surplus,axis=1)
     return df
@@ -140,11 +140,11 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                     that is then aggregated across classifiers
             2way: trains to discriminate only the two trained objects from recognition runs
                     then makes predictions on drawing data
-            2wayDraw: trains to discriminate only the two trained objects on three drawing runs 
+            2wayDraw: trains to discriminate only the two trained objects on three drawing runs
                       and makes predictions on the held out drawing run, for all runs
         logged: boolean. If true, return log-probabilities. If false, return raw probabilities.
-                    
-    assumes: that you have directories containing recognition run and drawing run data, consisting of paired .npy 
+
+    assumes: that you have directories containing recognition run and drawing run data, consisting of paired .npy
                 voxel matrices and .csv metadata matrices
     '''
 
@@ -196,23 +196,23 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
 
                 ## add prediction probabilities to metadata matrix
                 ## must sort so that trained are first, and control is last
-                cats = list(clf.classes_)                
+                cats = list(clf.classes_)
                 _ordering = np.argsort(np.hstack((trained_objs,control_objs))) ## e.g., [chair table bench bed] ==> [3 2 0 1]
                 ordering = np.argsort(_ordering) ## get indices that sort from alphabetical to (trained_objs, control_objs)
-                probs = clf.predict_proba(X_test)[:,ordering] ## [table chair bed bench] 
+                probs = clf.predict_proba(X_test)[:,ordering] ## [table chair bed bench]
                 logprobs = np.log(clf.predict_proba(X_test)[:,ordering])
 
                 if logged==True:
                     out = logprobs
                 else:
                     out = probs
-                                   
+
                 DM['t1_prob'] = out[:,0]
                 DM['t2_prob'] = out[:,1]
                 DM['c1_prob'] = out[:,2]
                 DM['c2_prob'] = out[:,3]
-                
-                ## also save out new columns in the same order 
+
+                ## also save out new columns in the same order
                 if logged==True:
                     probs = np.log(clf.predict_proba(X_test))
                 else:
@@ -220,7 +220,7 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                 DM['bed_prob'] = probs[:,0]
                 DM['bench_prob'] = probs[:,1]
                 DM['chair_prob'] = probs[:,2]
-                DM['table_prob'] = probs[:,3]                 
+                DM['table_prob'] = probs[:,3]
 
             elif version=='3way':
 
@@ -252,15 +252,15 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                     ctrl_index = cats.index([c for c in control_objs if c != ctrl][0])
                     t1_index = cats.index(trained_objs[0]) ## this is not always the target
                     t2_index = cats.index(trained_objs[1]) ## this is not always the target
-                    ordering = [t1_index, t2_index, ctrl_index]                    
+                    ordering = [t1_index, t2_index, ctrl_index]
                     probs.append(clf.predict_proba(X_test)[:,ordering])
                     logprobs.append(np.log(clf.predict_proba(X_test)[:,ordering]))
 
                 if logged==True:
                     out = logprobs
                 else:
-                    out = probs                    
-                    
+                    out = probs
+
                 DM['t1_prob'] = (out[0][:,0] + out[1][:,0])/2.0
                 DM['t2_prob'] = (out[0][:,1] + out[1][:,1])/2.0
                 DM['c_prob'] = (out[0][:,2] + out[1][:,2])/2.0
@@ -301,8 +301,8 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                 if logged==True:
                     out = logprobs
                 else:
-                    out = probs                    
-                                                    
+                    out = probs
+
                 DM['t1_prob'] = out[:,0]
                 DM['t2_prob'] = out[:,1]
 
@@ -316,7 +316,7 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                     DMtest = DM[DM.run_num==i]
                     trainrun_feats = DF[trainrun_inds,:]
                     testrun_feats = DF[testrun_inds,:]
-                    
+
                     ## normalize voxels within task
                     normalize_on = 1
                     if normalize_on:
@@ -332,7 +332,7 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
 
                     X_test = _DFtest
                     y_test = DMtest.label.values
-                    
+
                     clf = linear_model.LogisticRegression(penalty='l2',C=1).fit(X_train, y_train)
 
                     probs = clf.predict_proba(X_test)
@@ -351,21 +351,21 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                     if logged==True:
                         out = logprobs
                     else:
-                        out = probs                    
+                        out = probs
 
                     DMtest['t1_prob'] = out[:,0]
                     DMtest['t2_prob'] = out[:,1]
                     DMtest['subj'] = np.repeat(this_sub,DMtest.shape[0])
                     DMtest['roi'] = np.repeat(this_roi,DMtest.shape[0])
-                    
+
                     __acc.append(clf.score(X_test, y_test))
                     if len(INTDM)==0:
                         INTDM = DMtest
                     else:
                         INTDM = pd.concat([INTDM,DMtest],ignore_index=True)
                 DM = INTDM
-                _acc = np.mean(np.array(__acc))                
-            
+                _acc = np.mean(np.array(__acc))
+
             DM['subj'] = np.repeat(this_sub,DM.shape[0])
             DM['roi'] = np.repeat(this_roi,DM.shape[0])
 
@@ -375,8 +375,8 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                 ALLDM = pd.concat([ALLDM,DM],ignore_index=True)
 
             acc.append(_acc) if version == '2wayDraw' else acc.append(clf.score(X_test, y_test))
-            
-            
+
+
             '''
             ## plot probability timecourse by run number
             fig = plt.figure(figsize=(5,5))
@@ -393,8 +393,8 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                 os.makedirs('./plots/subj')
             plt.tight_layout()
             plt.savefig('./plots/subj/{}_{}_prob_{}.pdf'.format(iv.split('_')[0],this_roi,this_sub))
-            plt.close(fig)  
-            '''                        
+            plt.close(fig)
+            '''
 
         Acc.append(acc)
 
@@ -404,8 +404,8 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
 ## plotting helper
 def get_prob_timecourse(iv,DM,version='4way'):
     trained_objs = np.unique(DM.label.values)
-    control_objs = [i for i in ['bed','bench','chair','table'] if i not in trained_objs]    
-    
+    control_objs = [i for i in ['bed','bench','chair','table'] if i not in trained_objs]
+
     if version=='4way':
         t1 = trained_objs[0]
         t2 = trained_objs[1]
@@ -418,7 +418,7 @@ def get_prob_timecourse(iv,DM,version='4way'):
         control = np.vstack((DM[DM.label==t1].groupby(iv)['c1_prob'].mean().values,
                             DM[DM.label==t1].groupby(iv)['c2_prob'].mean().values,
                             DM[DM.label==t2].groupby(iv)['c1_prob'].mean().values,
-                            DM[DM.label==t2].groupby(iv)['c2_prob'].mean().values)).mean(0) ## control timecourse    
+                            DM[DM.label==t2].groupby(iv)['c2_prob'].mean().values)).mean(0) ## control timecourse
     elif version=='3way':
         t1 = trained_objs[0]
         t2 = trained_objs[1]
@@ -428,7 +428,7 @@ def get_prob_timecourse(iv,DM,version='4way'):
                        DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
         control = np.vstack((DM[DM.label==t1].groupby(iv)['c_prob'].mean().values,
                             DM[DM.label==t2].groupby(iv)['c_prob'].mean().values)).mean(0) ## control timecourse
-        
+
     elif version=='2way':
         t1 = trained_objs[0]
         t2 = trained_objs[1]
@@ -436,9 +436,9 @@ def get_prob_timecourse(iv,DM,version='4way'):
                        DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse; mean is taken over what?
         foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
                        DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
-        
-        control = np.zeros(len(foil))        
-        
+
+        control = np.zeros(len(foil))
+
     return target, foil, control
 
 
@@ -448,9 +448,9 @@ def get_prob_timecourse(iv,DM,version='4way'):
 
 def get_object_index(morphline,morphnum):
     furniture_axes = ['bedChair', 'bedTable', 'benchBed', 'chairBench', 'chairTable', 'tableBench']
-    car_axes = ['limoToSUV','limoToSedan','limoToSmart','smartToSedan','suvToSedan','suvToSmart']  
+    car_axes = ['limoToSUV','limoToSedan','limoToSmart','smartToSedan','suvToSedan','suvToSmart']
     furniture_items = ['bed','bench','chair','table']
-    car_items = ['limo','sedan','smartcar','SUV']               
+    car_items = ['limo','sedan','smartcar','SUV']
     endpoints = mdr_helpers.getEndpoints(morphline)
     morphnum = float(morphnum)
     whichEndpoint = int(np.round(morphnum/100))
@@ -458,9 +458,9 @@ def get_object_index(morphline,morphnum):
     if morphline in furniture_axes:
         return furniture_items.index(thing)+1
     elif morphline in car_axes:
-        return car_items.index(thing)+1    
-    
-def getEndpoints(morphline):    
+        return car_items.index(thing)+1
+
+def getEndpoints(morphline):
     if morphline=='sedanMinivan':
         return ['sedan','minivan']
     elif morphline=='minivanSportscar':
@@ -486,17 +486,17 @@ def getEndpoints(morphline):
     elif morphline=='tableBench':
         return ['table','bench']
     elif morphline=='limoToSUV':
-        return ['limo','SUV']    
+        return ['limo','SUV']
     elif morphline=='limoToSedan':
-        return ['sedan','limo']  
+        return ['sedan','limo']
     elif morphline=='limoToSmart':
-        return ['limo','smartcar']  
+        return ['limo','smartcar']
     elif morphline=='smartToSedan':
-        return ['smartcar','sedan']    
+        return ['smartcar','sedan']
     elif morphline=='suvToSedan':
-        return ['SUV','sedan']  
+        return ['SUV','sedan']
     elif morphline=='suvToSmart':
-        return ['SUV','smartcar']  
+        return ['SUV','smartcar']
     else:
         return ['A','B']
 
@@ -509,9 +509,9 @@ def get_mask_array(mask_path):
     mask_data = mask_img.get_data()
     num_brain_voxels = sum(sum(sum(mask_data==1)))
     return mask_data, num_brain_voxels
-    
+
 def load_roi_mask(subj,run_num,roi):
-    mask_path = proj_dir + subj +'/analysis/firstlevel/rois/' + roi + '_func__' + str(run_num) + '_binarized.nii.gz'        
+    mask_path = proj_dir + subj +'/analysis/firstlevel/rois/' + roi + '_func__' + str(run_num) + '_binarized.nii.gz'
     mask_data, nv = get_mask_array(mask_path)
     return mask_data
 
@@ -522,7 +522,7 @@ def load_roi_mask_combined(subj,run_num,roi):
         phase_num = '34'
     elif run_num in [5,6]:
         phase_num = '56'
-    mask_path = proj_dir + '/' + subj +'/analysis/firstlevel/rois/' + roi + '_func_combined_' + phase_num + '_binarized.nii.gz'        
+    mask_path = proj_dir + '/' + subj +'/analysis/firstlevel/rois/' + roi + '_func_combined_' + phase_num + '_binarized.nii.gz'
     mask_data, nv = get_mask_array(mask_path)
     return mask_data
 
@@ -565,15 +565,15 @@ def plot_phase_RSM(this_sub,roi,phase):
         mat2 = extract_obj_by_voxel_run_mat(this_sub,4,roi)
     elif phase=='post':
         mat1 = extract_obj_by_voxel_run_mat(this_sub,5,roi)
-        mat2 = extract_obj_by_voxel_run_mat(this_sub,6,roi)        
+        mat2 = extract_obj_by_voxel_run_mat(this_sub,6,roi)
     stacked = np.vstack((mat1,mat2))
     plt.matshow(np.corrcoef(stacked))
     plt.colorbar()
 
-    
+
 def extract_condition_by_voxel_run_mat(this_sub,run_num, roi):
     w = this_sub
-    these = coll.find({'wID': w}).sort('trialNum')   
+    these = coll.find({'wID': w}).sort('trialNum')
     versionNum = these[0]['versionNum']
 
     design = [i for i in mdtd if i['version'] == int(versionNum)] # find which axes belong to which condition
@@ -591,7 +591,7 @@ def extract_condition_by_voxel_run_mat(this_sub,run_num, roi):
     slot3 = load_data_and_apply_mask(this_sub,run_num,roi,obj2cope[condorder[2]])
     slot4 = load_data_and_apply_mask(this_sub,run_num,roi,obj2cope[condorder[3]])
     return np.vstack((slot1,slot2,slot3,slot4))
-     
+
 def remove_nans(array):
     return array[~np.isnan(array)]
 
@@ -604,14 +604,14 @@ def betwitdist(a,b,ab):
 def norm_hist(data,bins):
     weights = np.ones_like(data)/float(len(data))
     plt.hist(data, bins=bins, weights=weights)
-    
+
 def compare_btw_wit_obj_similarity_across_runs(this_sub,phase,roi):
     if phase=='pre':
         mat1 = extract_obj_by_voxel_run_mat(this_sub,3,roi)
         mat2 = extract_obj_by_voxel_run_mat(this_sub,4,roi)
     elif phase=='post':
         mat1 = extract_obj_by_voxel_run_mat(this_sub,5,roi)
-        mat2 = extract_obj_by_voxel_run_mat(this_sub,6,roi)        
+        mat2 = extract_obj_by_voxel_run_mat(this_sub,6,roi)
     fAB = np.vstack((mat1,mat2)) # stack feature matrices
     DAB = sklearn.metrics.pairwise.pairwise_distances(fAB, metric='correlation') # square matrix, where off-diagblock is distances *between* fA and fB vectors
     offblock = DAB[:len(mat1),range(len(mat1),shape(DAB)[1])]
@@ -643,7 +643,7 @@ def compare_btw_wit_cond_similarity_across_runs(this_sub,phase,roi):
     conwit_mean = control_witobj.mean()
     trabtw_mean = trained_btwobj.mean()
     conbtw_mean = control_btwobj.mean()
-    return trawit_mean,conwit_mean,trabtw_mean,conbtw_mean          
+    return trawit_mean,conwit_mean,trabtw_mean,conbtw_mean
 
 def get_vectorized_voxels_from_map(filename):
   img = nib.load(filename)
