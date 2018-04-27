@@ -13,12 +13,6 @@ import scipy.stats as stats
 ################### HELPERS FOR predict_obj_during_drawing_from_recog_runs notebook ###########
 ###############################################################################################
 
-### globals
-
-## define path to input datasets (tidy format)
-path_to_recog = '/home/jefan/neurosketch/neurosketch_voxelmat_freesurfer_recog'
-path_to_draw = '/home/jefan/neurosketch/neurosketch_voxelmat_freesurfer_drawing'
-roi_list = np.array(['V1','V2','LOC','IT','fusiform','parahippo', 'PRC', 'ento','hipp','mOFC'])
 
 ## general plotting params
 sns.set_context('poster')
