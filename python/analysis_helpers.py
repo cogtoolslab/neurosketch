@@ -13,7 +13,6 @@ import nibabel as nib
 ###############################################################################################
 
 ### globals
-
 #### Helper data loader functions
 def load_draw_meta(this_sub):
     this_file = 'metadata_{}_drawing.csv'.format(this_sub)
