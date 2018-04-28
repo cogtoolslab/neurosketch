@@ -52,16 +52,21 @@ There is a master DATA dir containing all processed fMRI data in standard format
 	* `DATA/copes/draw/taskGLM` drawing cope maps from drawing_task GLM
 
 # List of main analysis notebooks:
-* Pre-Post Representational Similarity Analyses on Recognition Data
-- How correlated are individual differences in prepost differentiation across different ROIs? (matrix plot)
+1. Pre-Post Representational Similarity Analyses on Recognition Data
+	- How correlated are individual differences in prepost differentiation across different ROIs? (matrix plot)
 
-* Measure Evidence for Objects During Drawing
+2. Measure Evidence for Objects During Drawing
 	- Using neural patterns from localizer recognition runs
 	- How correlated are logistic classifier predictions across different ROIs? (matrix plot)	
 	- Using VGG features
 
-* Relate Drawing and Differentiation
+3. Relate Drawing and Differentiation
+	- Where do we see relationship between target selection during drawing and representational differentiation?
+	- When does relationship emerge during session?
+	- Interaction with object assignment? (mixed effects model)	
 
-* Measure Informational Connectivity within Drawing Regions
+4. Measure Informational Connectivity within Drawing Regions
+	- How do regions cluster in terms of representing common information about target over time?
+	- What is complexity of transformation from sensory to decision-making/planning/execution regions?
 
 
