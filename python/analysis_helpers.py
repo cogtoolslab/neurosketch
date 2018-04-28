@@ -155,7 +155,7 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
         for this_sub in sub_list:
             ## load subject data in
             RM12, RF12 = load_recog_data(this_sub,this_roi,'12')
-            RM34, RF34 = load_recog_data(this_sub,this_roi,'34')
+            #RM34, RF34 = load_recog_data(this_sub,this_roi,'34')
             #RM = pd.concat([RM12,RM34])
             #RF = np.vstack((RF12,RF34))
             RM = RM12
@@ -486,6 +486,97 @@ def plot_summary_timecourse(ALLDM,
                     format(lookup[this_iv],toop,this_roi,lookup[this_iv],version)))
         plt.close(fig)
 
+        
+def get_log_odds(ALLDM,
+                 this_iv = 'trial_num',
+                 roi_list = roi_list_recog,
+                 version='4way',
+                 logged=True,
+                 proj_dir='../'):
+    '''
+    input: 
+        ALLDM
+        this_iv: options are ['run_num','trial_num','time_point']
+        roi_list: list of ROIs
+        version: which N-way classifier ['2way','3way','4way']
+        logged: True if using log probabilities to compute odds, False if not
+        proj_dir: path to root of project directory
+    output: 
+        d: pandas dataframe containing difference in log probabilities (log odds)
+        CSV files with prefix "difference_logprobs"
+        prints log odds to console
+    '''
+
+    sub_tf = []
+    sub_tc = []
+    sub_fc = []
+    roi = []
+    
+    subs = np.unique(ALLDM['subj'].values)
+    lookup = dict(zip(['trial_num','run_num','time_point'],['repetition','run','TR']))
+    
+    for this_roi in roi_list_recog:
+
+        T = []
+        F = []
+        C = []
+        Sub = []
+        for sub in subs:
+            inds =(ALLDM['roi']==this_roi) & (ALLDM['subj']==sub) 
+            t,f,c = get_prob_timecourse(this_iv,ALLDM[inds],version=version)
+            if len(T)==0:
+                T = t
+                F = f
+                C = c
+                DTF = t-f               
+                DTC = t-c
+                DFC = f-c
+            else:
+                T = np.hstack((T,t))
+                F = np.hstack((F,f))        
+                C = np.hstack((C,c)) 
+                DTF = np.hstack((DTF,t-f))                
+                DTC = np.hstack((DTC,t-c))
+                DFC = np.hstack((DFC,f-c))
+            Sub.append([sub]*len(t))   
+
+        ## make longform version of dataframe to use in tsplot (difference btw conditions)                    
+        Trial = np.tile(np.arange(len(t)),len(subs)*3)
+        Condition = np.repeat(['target-foil','target-control','foil-control'],len(T))
+        Sub = np.tile(np.array(flatten(Sub)),3)
+        Prob = np.hstack((DTF,DTC,DFC))        
+        assert len(Trial)==len(Condition)
+        assert len(Sub)==len(Prob)
+        assert len(Condition)==len(Sub)
+        x = pd.DataFrame([Prob,Trial,Condition,Sub])
+        x = x.transpose()
+        x.columns = ['probability',lookup[this_iv],'condition','sub']
+
+        for this_sub in subs:
+            sub_tf.append(x[(x['condition']=='target-foil') & (x['sub']==this_sub)]['probability'].mean())
+            sub_tc.append(x[(x['condition']=='target-control') & (x['sub']==this_sub)]['probability'].mean())  
+            sub_fc.append(x[(x['condition']=='foil-control') & (x['sub']==this_sub)]['probability'].mean()) 
+            roi.append(this_roi)
+
+        ## save out big dataframe with all subjects and timepoints
+        x.to_csv(proj_dir+'csv/difference_logprobs_{}_{}_{}.csv'.format(version,this_roi,this_iv),index=False)
+
+    ## make dataframe with subject-level difference scores
+    d = pd.DataFrame([sub_tf,sub_tc,sub_fc,roi])
+    d = d.transpose()
+    d.columns = ['target-foil','target-control','foil-control','roi']
+    d = d.astype({'target-foil':'float64','target-control':'float64','foil-control':'float64'})
+
+    ## print out target-foil ratios
+    if logged==True:
+        print d.groupby('roi')['target-foil'].apply(lambda x: np.mean(np.exp(x)))
+        d.to_csv(proj_dir+'csv/difference_logprobs_{}.csv'.format(version),index=False)
+    else:
+        print d.groupby('roi')['target-foil'].mean()
+        d.to_csv(proj_dir+'csv/difference_rawprobs_{}.csv'.format(version),index=False)
+        
+    return d
+        
 ###############################################################################################
 ################### HELPERS FOR prepost RSA analyses ##########################################
 ###############################################################################################
