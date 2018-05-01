@@ -77,6 +77,37 @@ def bootstrapCI(x,nIter):
     ub = np.percentile(u,97.5)
     return U,lb,ub,p
 
+
+
+def get_fn_applied_to_prob_timecourse(iv,DM,func=None): 
+    '''
+    Instead of getting the mean of target, foil, control for each iv, 
+    you can also pass a function of target and foil to get_prob_timecourse (eg `lambda target, foil: target-foil`)
+    and get the iv-timecourse for the output of that instead
+    (this enables performing operations on target and foil data before means are taken for each iv)    
+    '''
+    trained_objs = np.unique(DM.label.values)
+    control_objs = [i for i in ['bed','bench','chair','table'] if i not in trained_objs]    
+    
+    t1 = trained_objs[0]
+    t2 = trained_objs[1]
+    c1 = control_objs[0]
+    c2 = control_objs[1]
+    
+    if func:
+        return np.vstack((DM[DM.label==t1].groupby('trial_num').apply(lambda x: func(x['t1_prob'], x['t2_prob'])).values,
+                          DM[DM.label==t2].groupby('trial_num').apply(lambda x: func(x['t2_prob'], x['t1_prob'])).values)).mean(0)
+    else:
+        target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse
+        foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
+        control = np.vstack((DM[DM.label==t1].groupby(iv)['c1_prob'].mean().values,
+                            DM[DM.label==t1].groupby(iv)['c2_prob'].mean().values,
+                            DM[DM.label==t2].groupby(iv)['c1_prob'].mean().values,
+                            DM[DM.label==t2].groupby(iv)['c2_prob'].mean().values)).mean(0) ## control timecourse    
+        return target, foil, control
+
 ## plotting helper
 def get_prob_timecourse(iv,DM,version='4way'):
     trained_objs = np.unique(DM.label.values)
