@@ -488,7 +488,7 @@ def plot_summary_timecourse(ALLDM,
         
 def get_log_odds(ALLDM,
                  this_iv = 'trial_num',
-                 roi_list = roi_list_recog,
+                 roi_list = ['V1','V2'],
                  version='4way',
                  logged=True,
                  proj_dir='../'):
