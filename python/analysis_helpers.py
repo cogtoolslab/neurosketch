@@ -8,6 +8,7 @@ from nilearn import image
 from sklearn.metrics.pairwise import pairwise_distances
 import nibabel as nib
 import seaborn as sns
+import matplotlib.pyplot as plt
 sns.set_context('poster')
 
 ###############################################################################################
