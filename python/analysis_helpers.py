@@ -590,7 +590,7 @@ def get_log_odds(ALLDM,
             roi.append(this_roi)
 
         ## save out big dataframe with all subjects and timepoints
-        x.to_csv(proj_dir+'csv/difference_logprobs_{}_{}_{}.csv'.format(version,this_roi,this_iv),index=False)
+        x.to_csv(proj_dir+'/csv/difference_logprobs_{}_{}_{}.csv'.format(version,this_roi,this_iv),index=False)
 
     ## make dataframe with subject-level difference scores
     d = pd.DataFrame([sub_tf,sub_tc,sub_fc,roi])
@@ -601,10 +601,10 @@ def get_log_odds(ALLDM,
     ## print out target-foil ratios
     if logged==True:
         print(d.groupby('roi')['target-foil'].apply(lambda x: np.mean(np.exp(x))))
-        d.to_csv(proj_dir+'csv/difference_logprobs_{}.csv'.format(version),index=False)
+        d.to_csv(proj_dir+'/csv/difference_logprobs_{}.csv'.format(version),index=False)
     else:
         print(d.groupby('roi')['target-foil'].mean())
-        d.to_csv(proj_dir+'csv/difference_rawprobs_{}.csv'.format(version),index=False)
+        d.to_csv(proj_dir+'/csv/difference_rawprobs_{}.csv'.format(version),index=False)
         
     return d
         
