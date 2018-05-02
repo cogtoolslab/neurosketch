@@ -438,7 +438,7 @@ def plot_summary_timecourse(ALLDM,
 
     for this_roi in roi_list:
         
-        print 'Now plotting results for {} ...'.format(this_roi)
+        print('Now plotting results for {} ...'.format(this_roi))
 
         T = []
         F = []
@@ -599,10 +599,10 @@ def get_log_odds(ALLDM,
 
     ## print out target-foil ratios
     if logged==True:
-        print d.groupby('roi')['target-foil'].apply(lambda x: np.mean(np.exp(x)))
+        print(d.groupby('roi')['target-foil'].apply(lambda x: np.mean(np.exp(x))))
         d.to_csv(proj_dir+'csv/difference_logprobs_{}.csv'.format(version),index=False)
     else:
-        print d.groupby('roi')['target-foil'].mean()
+        print(d.groupby('roi')['target-foil'].mean())
         d.to_csv(proj_dir+'csv/difference_rawprobs_{}.csv'.format(version),index=False)
         
     return d
