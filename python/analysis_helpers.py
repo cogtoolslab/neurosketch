@@ -12,7 +12,6 @@ from scipy.misc import imread, imresize
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import seaborn as sns
-import matplotlib.pyplot as plt
 sns.set_context('poster')
 colors = sns.color_palette("cubehelix", 5)
 
@@ -445,7 +444,7 @@ def plot_summary_timecourse(ALLDM,
 
     for this_roi in roi_list:
         
-        print('Now plotting results for {} ...'.format(this_roi))
+        print 'Now plotting results for {} ...'.format(this_roi)
 
         T = []
         F = []
@@ -516,10 +515,10 @@ def plot_summary_timecourse(ALLDM,
             plt.legend(bbox_to_anchor=(0.7, 1.01))                        
             plt.title('Difference in classifier evidence by condition in {}'.format(this_roi))        
         plt.xticks(np.arange(np.max(x[lookup[this_iv]].values)+1))
-        if not os.path.exists(os.path.join(proj_dir,'plots/{}/roi/{}/{}'.format(nb_name,lookup[this_iv],toop))):
-            os.makedirs(os.path.join(proj_dir,'plots/{}/roi/{}/{}'.format(nb_name,lookup[this_iv],toop)))
+        if not os.path.exists(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop))):
+            os.makedirs(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop)))
         plt.tight_layout()        
-        plt.savefig(os.path.join(proj_dir,'plots/{}/roi/{}/{}/prob_timecourse_{}_by_{}_{}.pdf'.\
+        plt.savefig(os.path.join(proj_dir,'plots/{}/{}/{}/prob_timecourse_{}_by_{}_{}.pdf'.\
                     format(nb_name,lookup[this_iv],toop,this_roi,lookup[this_iv],version)))
         plt.close(fig)
 
@@ -596,7 +595,7 @@ def get_log_odds(ALLDM,
             roi.append(this_roi)
 
         ## save out big dataframe with all subjects and timepoints
-        x.to_csv(proj_dir+'/csv/difference_logprobs_{}_{}_{}.csv'.format(version,this_roi,this_iv),index=False)
+        x.to_csv(proj_dir+'csv/difference_logprobs_{}_{}_{}.csv'.format(version,this_roi,this_iv),index=False)
 
     ## make dataframe with subject-level difference scores
     d = pd.DataFrame([sub_tf,sub_tc,sub_fc,roi])
@@ -606,11 +605,11 @@ def get_log_odds(ALLDM,
 
     ## print out target-foil ratios
     if logged==True:
-        print(d.groupby('roi')['target-foil'].apply(lambda x: np.mean(np.exp(x))))
-        d.to_csv(proj_dir+'/csv/difference_logprobs_{}.csv'.format(version),index=False)
+        print d.groupby('roi')['target-foil'].apply(lambda x: np.mean(np.exp(x)))
+        d.to_csv(proj_dir+'csv/difference_logprobs_{}.csv'.format(version),index=False)
     else:
-        print(d.groupby('roi')['target-foil'].mean())
-        d.to_csv(proj_dir+'/csv/difference_rawprobs_{}.csv'.format(version),index=False)
+        print d.groupby('roi')['target-foil'].mean()
+        d.to_csv(proj_dir+'csv/difference_rawprobs_{}.csv'.format(version),index=False)
         
     return d
         
