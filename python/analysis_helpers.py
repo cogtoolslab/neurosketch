@@ -164,6 +164,45 @@ def get_prob_timecourse(iv,DM,version='4way'):
 
     return target, foil, control
 
+def get_log_prob_timecourse(iv,DM,version='4way'):
+    trained_objs = np.unique(DM.label.values)
+    control_objs = [i for i in ['bed','bench','chair','table'] if i not in trained_objs]
+    
+    if version=='4way':
+        t1 = trained_objs[0]
+        t2 = trained_objs[1]
+        c1 = control_objs[0]
+        c2 = control_objs[1]
+        target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse
+        foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
+        control = np.vstack((DM[DM.label==t1].groupby(iv)['c1_prob'].mean().values,
+                            DM[DM.label==t1].groupby(iv)['c2_prob'].mean().values,
+                            DM[DM.label==t2].groupby(iv)['c1_prob'].mean().values,
+                            DM[DM.label==t2].groupby(iv)['c2_prob'].mean().values)).mean(0) ## control timecourse
+    elif version=='3way':
+        t1 = trained_objs[0]
+        t2 = trained_objs[1]
+        target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse; mean is taken over what?
+        foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
+        control = np.vstack((DM[DM.label==t1].groupby(iv)['c_prob'].mean().values,
+                            DM[DM.label==t2].groupby(iv)['c_prob'].mean().values)).mean(0) ## control timecourse
+
+    elif version=='2way':
+        t1 = trained_objs[0]
+        t2 = trained_objs[1]
+        target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse; mean is taken over what?
+        foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
+
+        control = np.zeros(len(foil))
+
+    return target, foil, control
+
 def flatten(x):
     return [item for sublist in x for item in sublist]
 
@@ -571,7 +610,7 @@ def get_log_odds(ALLDM,
         Sub = []
         for sub in subs:
             inds =(ALLDM['roi']==this_roi) & (ALLDM['subj']==sub) 
-            t,f,c = get_prob_timecourse(this_iv,ALLDM[inds],version=version)
+            t,f,c = get_log_prob_timecourse(this_iv,ALLDM[inds],version=version)
             if len(T)==0:
                 T = t
                 F = f
