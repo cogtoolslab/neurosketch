@@ -506,12 +506,8 @@ def plot_summary_timecourse(ALLDM,
             x = x.transpose()
             x.columns = ['probability',lookup[this_iv],'condition','sub']        
             toop = 'difference'
-        fig = plt.figure(figsize=(8,4))
-        ## distinguish between log prob and regular prob, and exponentiate log prob
-        x.rename(columns={'probability':'log_prob'},inplace=True)
-        x.log_prob = x.log_prob.astype('float')
-        x['probability'] = np.exp(x['log_prob'])
-        x.probability = x.probability.astype('float')                
+        #print x
+        fig = plt.figure(figsize=(8,4))              
         ## plot it
         sns.tsplot(data=x,
                   time=lookup[this_iv],
@@ -529,7 +525,7 @@ def plot_summary_timecourse(ALLDM,
             plt.ylim(-0.3,0.3)
             plt.axhline(0,linestyle=':',color='k')  
             plt.legend(bbox_to_anchor=(0.7, 1.01))                        
-            plt.title('Difference in classifier evidence by condition in {}'.format(this_roi))        
+            plt.title('Difference in classifier evidence by condition in {}'.format(this_roi))             
         plt.xticks(np.arange(np.max(x[lookup[this_iv]].values)+1))
         if not os.path.exists(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop))):
             os.makedirs(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop)))
