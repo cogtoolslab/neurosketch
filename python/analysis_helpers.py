@@ -117,6 +117,17 @@ def get_fn_applied_to_prob_timecourse(iv,DM,func=None):
 def get_prob_timecourse(iv,DM,version='4way'):
     trained_objs = np.unique(DM.label.values)
     control_objs = [i for i in ['bed','bench','chair','table'] if i not in trained_objs]
+    
+    DM.rename(columns={'t1_prob':'t1_logprob','t2_prob':'t2_logprob',
+                      'c1_prob':'c1_logprob','c2_prob':'c2_logprob'},inplace=True)
+    t1_prob = np.exp(DM['t1_logprob']).values
+    DM = DM.assign(t1_prob=pd.Series(t1_prob).values)
+    t2_prob = np.exp(DM['t2_logprob']).values
+    DM = DM.assign(t2_prob=pd.Series(t2_prob).values)
+    c1_prob = np.exp(DM['c1_logprob']).values
+    DM = DM.assign(c1_prob=pd.Series(c1_prob).values)
+    c2_prob = np.exp(DM['c2_logprob']).values
+    DM = DM.assign(c2_prob=pd.Series(c2_prob).values)    
 
     if version=='4way':
         t1 = trained_objs[0]
@@ -233,8 +244,8 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                 _ordering = np.argsort(np.hstack((trained_objs,control_objs))) ## e.g., [chair table bench bed] ==> [3 2 0 1]
                 ordering = np.argsort(_ordering) ## get indices that sort from alphabetical to (trained_objs, control_objs)
                 probs = clf.predict_proba(X_test)[:,ordering] ## [table chair bed bench]
-                logprobs = np.log(clf.predict_proba(X_test)[:,ordering])
-
+                logprobs = np.log(clf.predict_proba(X_test)[:,ordering])                               
+                
                 if logged==True:
                     out = logprobs
                 else:
@@ -496,6 +507,11 @@ def plot_summary_timecourse(ALLDM,
             x.columns = ['probability',lookup[this_iv],'condition','sub']        
             toop = 'difference'
         fig = plt.figure(figsize=(8,4))
+        ## distinguish between log prob and regular prob, and exponentiate log prob
+        x.rename(columns={'probability':'log_prob'},inplace=True)
+        x.log_prob = x.log_prob.astype('float')
+        x['probability'] = np.exp(x['log_prob'])
+        x.probability = x.probability.astype('float')                
         ## plot it
         sns.tsplot(data=x,
                   time=lookup[this_iv],
