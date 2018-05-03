@@ -53,12 +53,12 @@ There is a master DATA dir containing all processed fMRI data in standard format
 
 # List of main analysis notebooks:
 1. Pre-Post Representational Similarity Analyses on Recognition Data
+	- Substantial variation in extent to which these have changed from before to after drawing
 	- How correlated are individual differences in prepost differentiation across different ROIs? (matrix plot)
 
 2. Measure Evidence for Objects During Drawing
-	- Using neural patterns from localizer recognition runs
+	- Using indpt neural patterns from localizer recognition runs to generalize to drawing runs
 	- How correlated are logistic classifier predictions across different ROIs? (matrix plot)	
-	- Using VGG features
 
 3. Relate Drawing and Differentiation
 	- Where do we see relationship between target selection during drawing and representational differentiation?
@@ -66,7 +66,7 @@ There is a master DATA dir containing all processed fMRI data in standard format
 	- Interaction with object assignment? (mixed effects model)	
 
 4. Measure Informational Connectivity within Drawing Regions
-	- How do regions cluster in terms of representing common information about target over time?
-	- What is complexity of transformation from sensory to decision-making/planning/execution regions?
+	- Which regions represent common information about target over time?
+	- What does this imply about organization of visual production system?
 
 
