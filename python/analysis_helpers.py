@@ -494,7 +494,7 @@ def plot_summary_timecourse(ALLDM,
 
     for this_roi in roi_list:
         
-        print 'Now plotting results for {} ...'.format(this_roi)
+        print('Now plotting results for {} ...'.format(this_roi))
 
         T = []
         F = []
@@ -545,7 +545,7 @@ def plot_summary_timecourse(ALLDM,
             x = x.transpose()
             x.columns = ['probability',lookup[this_iv],'condition','sub']        
             toop = 'difference'
-        #print x
+        #print(x)
         fig = plt.figure(figsize=(8,4))              
         ## plot it
         sns.tsplot(data=x,
@@ -654,12 +654,12 @@ def get_log_odds(ALLDM,
     d.columns = ['target-foil','target-control','foil-control','roi']
     d = d.astype({'target-foil':'float64','target-control':'float64','foil-control':'float64'})
 
-    ## print out target-foil ratios
+    ## output target-foil ratios
     if logged==True:
-        print d.groupby('roi')['target-foil'].apply(lambda x: np.mean(np.exp(x)))
+        print(d.groupby('roi')['target-foil'].apply(lambda x: np.mean(np.exp(x))))
         d.to_csv(proj_dir+'csv/difference_logprobs_{}.csv'.format(version),index=False)
     else:
-        print d.groupby('roi')['target-foil'].mean()
+        print(d.groupby('roi')['target-foil'].mean())
         d.to_csv(proj_dir+'csv/difference_rawprobs_{}.csv'.format(version),index=False)
         
     return d
