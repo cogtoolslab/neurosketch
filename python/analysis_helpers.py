@@ -9,6 +9,7 @@ from sklearn.metrics.pairwise import pairwise_distances
 import nibabel as nib
 
 from scipy.misc import imread, imresize
+from scipy.stats import norm, linregress
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
@@ -82,36 +83,6 @@ def bootstrapCI(x,nIter):
     lb = np.percentile(u,2.5)
     ub = np.percentile(u,97.5)
     return U,lb,ub,p
-
-def corrbootstrapCI(x, y, nIter):
-    '''
-    input:
-        x is an array
-        y is an array
-        nIter is the numberof random samples to take
-    returns:
-        U: bootstrapped mean
-        lb: lower bound of 95 CI
-        ub: upper bound of 95 CI
-        p: p value
-    '''
-    u = []
-    for i in np.arange(nIter):
-        inds = np.random.RandomState(i).choice(len(x),len(x))
-        bootx = x[inds]
-        booty = y[inds]
-        _corr = stats.pearsonr(bootx, booty)[0]
-        corr = pd.DataFrame([bootx, booty]).transpose().corr()[0][1] if np.isnan(_corr) else _corr
-        u.append(corr)
-
-    p1 = len([i for i in u if i<0])/len(u) * 2
-    p2 = len([i for i in u if i>0])/len(u) * 2
-    p = np.min([p1,p2])
-    U = np.mean(u)
-    lb = np.percentile(u,2.5)
-    ub = np.percentile(u,97.5)
-    return U,lb,ub,p
-
 
 
 def get_fn_applied_to_prob_timecourse(iv,DM,func=None): 
@@ -906,3 +877,87 @@ def get_vectorized_voxels_from_map(filename):
     data = img.get_data()
     flat = np.ravel(data)
     return flat
+
+
+
+###############################################################################################
+################### HELPERS FOR relate drawing and prepost ####################################
+###############################################################################################
+
+def corrbootstrapCI(x, y, nIter):
+    '''
+    input:
+        x is an array
+        y is an array
+        nIter is the numberof random samples to take
+    returns:
+        U: bootstrapped mean
+        lb: lower bound of 95 CI
+        ub: upper bound of 95 CI
+        p: p value
+    '''
+    u = []
+    for i in np.arange(nIter):
+        inds = np.random.RandomState(i).choice(len(x),len(x))
+        bootx = x[inds]
+        booty = y[inds]
+        _corr = stats.pearsonr(bootx, booty)[0]
+        corr = pd.DataFrame([bootx, booty]).transpose().corr()[0][1] if np.isnan(_corr) else _corr
+        u.append(corr)
+
+    p1 = len([i for i in u if i<0])/len(u) * 2
+    p2 = len([i for i in u if i>0])/len(u) * 2
+    p = np.min([p1,p2])
+    U = np.mean(u)
+    lb = np.percentile(u,2.5)
+    ub = np.percentile(u,97.5)
+    return U,lb,ub,p
+
+
+def custom_bootstrapCI(x, estimator, nIter, *args):
+    u = []
+    for i in np.arange(nIter):
+        inds = np.random.RandomState(i).choice(len(x), len(x))
+        boot = x[inds]
+        u.append(estimator(boot, *args))
+
+    p1 = len([i for i in u if i < 0]) / len(u) * 2
+    p2 = len([i for i in u if i > 0]) / len(u) * 2
+    p = np.min([p1, p2])
+    U = np.mean(u)
+    lb = np.percentile(u, 2.5)
+    ub = np.percentile(u, 97.5)
+    return U, lb, ub, p
+
+
+def compute_clf_measure(target, foil, measure):
+    if measure == 't-f':
+        return target - foil
+    elif measure == 'txf':
+        return target + foil if logged else target * foil
+    elif measure == 't':
+        return target
+    else:
+        return foil
+
+
+def scoreVSdiff(subdata, this_roi):
+    clfscores = [np.mean(c['clf']) for c in subdata]
+    diffscores = [sub['diff'] for sub in subdata]
+
+    if this_roi == 'Frontal':
+        return pd.DataFrame([clfscores, diffscores]).transpose().corr()[0][1]
+    else:
+        return stats.pearsonr(clfscores, diffscores)[0]
+
+
+def slope_scoreVSdiff(subdata, this_roi, num_ivs):
+    diffscores = [sub['diff'] for sub in subdata]
+    clfscores = [c['clf'] for c in subdata]
+
+    if this_roi == 'Frontal':
+        coefficients = [pd.DataFrame([[c[i] for c in clfscores], diffscores]).transpose().corr()[0][1] for i in
+                        range(num_ivs)]
+    else:
+        coefficients = [stats.pearsonr([c[i] for c in clfscores], diffscores)[0] for i in range(num_ivs)]
+    return linregress(np.arange(num_ivs), coefficients)[0]
