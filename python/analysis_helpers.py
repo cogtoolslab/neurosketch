@@ -9,6 +9,7 @@ from sklearn.metrics.pairwise import pairwise_distances
 import nibabel as nib
 
 from scipy.misc import imread, imresize
+import scipy.stats as stats
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import seaborn as sns
@@ -73,6 +74,35 @@ def bootstrapCI(x,nIter):
         inds = np.random.RandomState(i).choice(len(x),len(x))
         boot = x[inds]
         u.append(np.mean(boot))
+
+    p1 = len([i for i in u if i<0])/len(u) * 2
+    p2 = len([i for i in u if i>0])/len(u) * 2
+    p = np.min([p1,p2])
+    U = np.mean(u)
+    lb = np.percentile(u,2.5)
+    ub = np.percentile(u,97.5)
+    return U,lb,ub,p
+
+def corrbootstrapCI(x, y, nIter):
+    '''
+    input:
+        x is an array
+        y is an array
+        nIter is the numberof random samples to take
+    returns:
+        U: bootstrapped mean
+        lb: lower bound of 95 CI
+        ub: upper bound of 95 CI
+        p: p value
+    '''
+    u = []
+    for i in np.arange(nIter):
+        inds = np.random.RandomState(i).choice(len(x),len(x))
+        bootx = x[inds]
+        booty = y[inds]
+        _corr = stats.pearsonr(bootx, booty)[0]
+        corr = pd.DataFrame([bootx, booty]).transpose().corr()[0][1] if np.isnan(_corr) else _corr
+        u.append(corr)
 
     p1 = len([i for i in u if i<0])/len(u) * 2
     p2 = len([i for i in u if i>0])/len(u) * 2
@@ -494,7 +524,7 @@ def plot_summary_timecourse(ALLDM,
 
     for this_roi in roi_list:
         
-        print 'Now plotting results for {} ...'.format(this_roi)
+        print('Now plotting results for {} ...'.format(this_roi))
 
         T = []
         F = []
@@ -656,10 +686,10 @@ def get_log_odds(ALLDM,
 
     ## print out target-foil ratios
     if logged==True:
-        print d.groupby('roi')['target-foil'].apply(lambda x: np.mean(np.exp(x)))
+        print(d.groupby('roi')['target-foil'].apply(lambda x: np.mean(np.exp(x))))
         d.to_csv(proj_dir+'csv/difference_logprobs_{}.csv'.format(version),index=False)
     else:
-        print d.groupby('roi')['target-foil'].mean()
+        print(d.groupby('roi')['target-foil'].mean())
         d.to_csv(proj_dir+'csv/difference_rawprobs_{}.csv'.format(version),index=False)
         
     return d
