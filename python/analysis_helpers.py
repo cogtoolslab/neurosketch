@@ -471,6 +471,7 @@ def plot_summary_timecourse(ALLDM,
                             render_cond=1,
                             version='4way',
                             proj_dir='../',
+                            baseline_correct=False
                             nb_name='2_object_evidence_during_drawing'):
     '''
     input: 
@@ -480,7 +481,8 @@ def plot_summary_timecourse(ALLDM,
         render_cond: Is 1 if you want to the CONDITION-wise plots -- trained vs. foil vs control
                      Is 0 if if you want the DIFFERENCE plots -- trained - foil vs foil - control
         version: Using 4-way, 3-way, or 2-way classifier results? options are ['2way','3way','4way']
-
+        baseline_correct: If you want to subtract the first observation from the time course
+        nb_name: which notebook is this from
         proj_dir: root directory of project.
     
     output: 
@@ -502,8 +504,12 @@ def plot_summary_timecourse(ALLDM,
         C = []
         Sub = []
         for sub in subs:
-            inds =(ALLDM['roi']==this_roi) & (ALLDM['subj']==sub) 
+            inds = (ALLDM['roi']==this_roi) & (ALLDM['subj']==sub) if this_roi != 'VGG' else (ALLDM['roi']==this_roi) & (ALLDM['subj']==sub) & (ALLDM['time_point'] == 23)
             t,f,c = get_prob_timecourse(this_iv,ALLDM[inds],version=version)
+            if baseline_correct:
+                t = t - t[0]
+                f = f - f[0]
+                c = c - c[0]
             if len(T)==0:
                 T = t
                 F = f
@@ -610,8 +616,8 @@ def get_log_odds(ALLDM,
         C = []
         Sub = []
         for sub in subs:
-            inds =(ALLDM['roi']==this_roi) & (ALLDM['subj']==sub) 
-            t,f,c = get_log_prob_timecourse(this_iv,ALLDM[inds],version=version)
+            inds = (ALLDM['roi']==this_roi) & (ALLDM['subj']==sub) if this_roi != 'VGG' else (ALLDM['roi']==this_roi) & (ALLDM['subj']==sub) & (ALLDM['time_point'] == 23)
+            t,f,c = get_log_prob_timecourse(this_iv,ALLDM[inds],version=version) if logged else get_prob_timecourse(this_iv,ALLDM[inds],version=version)
             if len(T)==0:
                 T = t
                 F = f
@@ -856,108 +862,3 @@ def compare_btw_wit_cond_similarity_across_runs(this_sub,phase,roi):
     elif phase == '46':
         mat1 = extract_condition_by_voxel_run_mat(this_sub,4,roi)
         mat2 = extract_condition_by_voxel_run_mat(this_sub,6,roi)
-
-    fAB = np.vstack((mat1,mat2)) # stack feature matrices
-    DAB = pairwise_distances(fAB, metric='correlation') # square matrix, where off-diagblock is distances *between* fA and fB vectors
-    offblock = DAB[:len(mat1),range(len(mat1),shape(DAB)[1])]
-
-    trained_witobj = offblock.diagonal()[:2]
-    control_witobj = offblock.diagonal()[2:]
-    trained_btwobj = np.array([offblock[:2,:2][0,1], offblock[:2,:2][1,0]])
-    control_btwobj = np.array([offblock[2:,2:][0,1],offblock[2:,2:][1,0]])
-
-    trawit_mean = trained_witobj.mean()
-    conwit_mean = control_witobj.mean()
-    trabtw_mean = trained_btwobj.mean()
-    conbtw_mean = control_btwobj.mean()
-    return trawit_mean,conwit_mean,trabtw_mean,conbtw_mean
-
-def get_vectorized_voxels_from_map(filename):
-    img = nib.load(filename)
-    data = img.get_data()
-    flat = np.ravel(data)
-    return flat
-
-
-
-###############################################################################################
-################### HELPERS FOR relate drawing and prepost ####################################
-###############################################################################################
-
-def corrbootstrapCI(x, y, nIter):
-    '''
-    input:
-        x is an array
-        y is an array
-        nIter is the numberof random samples to take
-    returns:
-        U: bootstrapped mean
-        lb: lower bound of 95 CI
-        ub: upper bound of 95 CI
-        p: p value
-    '''
-    u = []
-    for i in np.arange(nIter):
-        inds = np.random.RandomState(i).choice(len(x),len(x))
-        bootx = x[inds]
-        booty = y[inds]
-        _corr = stats.pearsonr(bootx, booty)[0]
-        corr = pd.DataFrame([bootx, booty]).transpose().corr()[0][1] if np.isnan(_corr) else _corr
-        u.append(corr)
-
-    p1 = len([i for i in u if i<0])/len(u) * 2
-    p2 = len([i for i in u if i>0])/len(u) * 2
-    p = np.min([p1,p2])
-    U = np.mean(u)
-    lb = np.percentile(u,2.5)
-    ub = np.percentile(u,97.5)
-    return U,lb,ub,p
-
-
-def custom_bootstrapCI(x, estimator, nIter, *args):
-    u = []
-    for i in np.arange(nIter):
-        inds = np.random.RandomState(i).choice(len(x), len(x))
-        boot = x[inds]
-        u.append(estimator(boot, *args))
-
-    p1 = len([i for i in u if i < 0]) / len(u) * 2
-    p2 = len([i for i in u if i > 0]) / len(u) * 2
-    p = np.min([p1, p2])
-    U = np.mean(u)
-    lb = np.percentile(u, 2.5)
-    ub = np.percentile(u, 97.5)
-    return U, lb, ub, p
-
-
-def compute_clf_measure(target, foil, measure):
-    if measure == 't-f':
-        return target - foil
-    elif measure == 'txf':
-        return target + foil if logged else target * foil
-    elif measure == 't':
-        return target
-    else:
-        return foil
-
-
-def scoreVSdiff(subdata, this_roi):
-    clfscores = [np.mean(c['clf']) for c in subdata]
-    diffscores = [sub['diff'] for sub in subdata]
-
-    if this_roi == 'Frontal':
-        return pd.DataFrame([clfscores, diffscores]).transpose().corr()[0][1]
-    else:
-        return stats.pearsonr(clfscores, diffscores)[0]
-
-
-def slope_scoreVSdiff(subdata, this_roi, num_ivs):
-    diffscores = [sub['diff'] for sub in subdata]
-    clfscores = [c['clf'] for c in subdata]
-
-    if this_roi == 'Frontal':
-        coefficients = [pd.DataFrame([[c[i] for c in clfscores], diffscores]).transpose().corr()[0][1] for i in
-                        range(num_ivs)]
-    else:
-        coefficients = [stats.pearsonr([c[i] for c in clfscores], diffscores)[0] for i in range(num_ivs)]
-    return linregress(np.arange(num_ivs), coefficients)[0]
