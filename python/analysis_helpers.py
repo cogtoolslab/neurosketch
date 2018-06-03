@@ -471,7 +471,7 @@ def plot_summary_timecourse(ALLDM,
                             render_cond=1,
                             version='4way',
                             proj_dir='../',
-                            baseline_correct=False
+                            baseline_correct=False,
                             nb_name='2_object_evidence_during_drawing'):
     '''
     input: 
