@@ -219,13 +219,13 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
         roi_list: a list containing roi names
         version: a string from options: ['4way','3way','2way']
             4way: trains to discriminate all four objects from recognition runs
+            4wayIndependent: subsamples one of the trained objects, trains
+                3way classifier that outputs probabilities for the subsampled trained 
+                and all control objects; control probabilities are aggregated across
+                classifiers while trained probabilities aren't, resulting in 4 scores per row
             3way: subsamples one of the control objects, trains 3-way classifier
                     that outputs probabilities for target, foil, and control objects
                     that is then aggregated across classifiers
-            3wayIndependentTrained: subsamples one of the trained objects, trains
-                    3way classifier that outputs probabilities for the subsampled trained 
-                    and all control objects; control probabilities are aggregated across
-                    classifiers while trained probabilities aren't
             2way: trains to discriminate only the two trained objects from recognition runs
                     then makes predictions on drawing data
             2wayDraw: trains to discriminate only the two trained objects on three drawing runs
@@ -310,7 +310,7 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                 DM['chair_prob'] = probs[:,2]
                 DM['table_prob'] = probs[:,3]
                 
-            elif version=='3wayIndependentTrained':
+            elif version=='4wayIndependent':
 
                 for trained_obj in reversed(trained_objs): # reversed so that order of inclusion is t1, t2
 
