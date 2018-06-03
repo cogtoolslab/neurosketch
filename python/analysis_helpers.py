@@ -222,6 +222,10 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
             3way: subsamples one of the control objects, trains 3-way classifier
                     that outputs probabilities for target, foil, and control objects
                     that is then aggregated across classifiers
+            3wayIndependentTrained: subsamples one of the trained objects, trains
+                    3way classifier that outputs probabilities for the subsampled trained 
+                    and all control objects; control probabilities are aggregated across
+                    classifiers while trained probabilities aren't
             2way: trains to discriminate only the two trained objects from recognition runs
                     then makes predictions on drawing data
             2wayDraw: trains to discriminate only the two trained objects on three drawing runs
