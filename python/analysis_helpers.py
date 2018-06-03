@@ -305,6 +305,51 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                 DM['bench_prob'] = probs[:,1]
                 DM['chair_prob'] = probs[:,2]
                 DM['table_prob'] = probs[:,3]
+                
+            elif version=='3wayIndependentTrained':
+
+                for trained_obj in reversed(trained_objs): # reversed so that order of inclusion is t1, t2
+
+                    inds = RM.label != trained_obj
+                    _RM = RM[inds]
+
+                    ## normalize voxels within task
+                    normalize_on = 1
+                    if normalize_on:
+                        _RF = normalize(RF[inds,:])
+                        _DF = normalize(DF)
+                    else:
+                        _RF = RF[inds,:]
+                        _DF = DF
+
+                    # single train/test split
+                    X_train = _RF # recognition run feature set
+                    y_train = _RM.label.values # list of labels for the training set
+
+                    X_test = _DF
+                    y_test = DM.label.values
+                    clf = linear_model.LogisticRegression(penalty='l2',C=1).fit(X_train, y_train)
+
+                    ## add prediction probabilities to metadata matrix
+                    ## must sort so that trained are first, and control is last
+                    cats = list(clf.classes_)
+                    trained_index = cats.index([t for t in  trained_objs if t != trained_obj][0])
+                    c1_index = cats.index(control_objs[0]) ## this is not always the target
+                    c2_index = cats.index(control_objs[1]) ## this is not always the target
+                    ordering = [trained_index, c1_index, c2_index]
+                    probs.append(clf.predict_proba(X_test)[:,ordering])
+                    logprobs.append(np.log(clf.predict_proba(X_test)[:,ordering]))
+
+                if logged==True:
+                    out = logprobs
+                else:
+                    out = probs
+                    
+                # save out new columns by object name and by t1, t2, c1, c2:
+                DM['t1_prob'] = DM['{}_prob'.format(trained_objs[0])] = out[0][:,0]
+                DM['t2_prob'] = DM['{}_prob'.format(trained_objs[1])] = out[1][:,0]
+                DM['c1_prob'] = DM['{}_prob'.format(control_objs[0])] = (out[0][:,1] + out[1][:,1])/2.0
+                DM['c2_prob'] = DM['{}_prob'.format(control_objs[0])] = (out[0][:,2] + out[1][:,2])/2.0
 
             elif version=='3way':
 
