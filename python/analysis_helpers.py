@@ -130,7 +130,7 @@ def get_prob_timecourse(iv,DM,version='4way'):
     c2_prob = np.exp(DM['c2_logprob']).values
     DM = DM.assign(c2_prob=pd.Series(c2_prob).values)    
 
-    if version=='4way':
+    if version[:4]=='4way':
         t1 = trained_objs[0]
         t2 = trained_objs[1]
         c1 = control_objs[0]
@@ -143,7 +143,7 @@ def get_prob_timecourse(iv,DM,version='4way'):
                             DM[DM.label==t1].groupby(iv)['c2_prob'].mean().values,
                             DM[DM.label==t2].groupby(iv)['c1_prob'].mean().values,
                             DM[DM.label==t2].groupby(iv)['c2_prob'].mean().values)).mean(0) ## control timecourse
-    elif version=='3way':
+    elif version[:4]=='3way':
         t1 = trained_objs[0]
         t2 = trained_objs[1]
         target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
@@ -153,7 +153,7 @@ def get_prob_timecourse(iv,DM,version='4way'):
         control = np.vstack((DM[DM.label==t1].groupby(iv)['c_prob'].mean().values,
                             DM[DM.label==t2].groupby(iv)['c_prob'].mean().values)).mean(0) ## control timecourse
 
-    elif version=='2way':
+    elif version[:4]=='2way':
         t1 = trained_objs[0]
         t2 = trained_objs[1]
         target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
@@ -169,7 +169,7 @@ def get_log_prob_timecourse(iv,DM,version='4way'):
     trained_objs = np.unique(DM.label.values)
     control_objs = [i for i in ['bed','bench','chair','table'] if i not in trained_objs]
     
-    if version=='4way':
+    if version[:4]=='4way':
         t1 = trained_objs[0]
         t2 = trained_objs[1]
         c1 = control_objs[0]
@@ -182,7 +182,7 @@ def get_log_prob_timecourse(iv,DM,version='4way'):
                             DM[DM.label==t1].groupby(iv)['c2_prob'].mean().values,
                             DM[DM.label==t2].groupby(iv)['c1_prob'].mean().values,
                             DM[DM.label==t2].groupby(iv)['c2_prob'].mean().values)).mean(0) ## control timecourse
-    elif version=='3way':
+    elif version[:4]=='3way':
         t1 = trained_objs[0]
         t2 = trained_objs[1]
         target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
@@ -192,7 +192,7 @@ def get_log_prob_timecourse(iv,DM,version='4way'):
         control = np.vstack((DM[DM.label==t1].groupby(iv)['c_prob'].mean().values,
                             DM[DM.label==t2].groupby(iv)['c_prob'].mean().values)).mean(0) ## control timecourse
 
-    elif version=='2way':
+    elif version[:4]=='2way':
         t1 = trained_objs[0]
         t2 = trained_objs[1]
         target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
@@ -219,6 +219,10 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
         roi_list: a list containing roi names
         version: a string from options: ['4way','3way','2way']
             4way: trains to discriminate all four objects from recognition runs
+            4wayIndependent: subsamples one of the trained objects, trains
+                3way classifier that outputs probabilities for the subsampled trained 
+                and all control objects; control probabilities are aggregated across
+                classifiers while trained probabilities aren't, resulting in 4 scores per row
             3way: subsamples one of the control objects, trains 3-way classifier
                     that outputs probabilities for target, foil, and control objects
                     that is then aggregated across classifiers
@@ -305,6 +309,53 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                 DM['bench_prob'] = probs[:,1]
                 DM['chair_prob'] = probs[:,2]
                 DM['table_prob'] = probs[:,3]
+                
+            elif version=='4wayIndependent':
+
+                for trained_obj in reversed(trained_objs): # reversed so that order of inclusion is t1, t2
+
+                    inds = RM.label != trained_obj
+                    _RM = RM[inds]
+
+                    ## normalize voxels within task
+                    normalize_on = 1
+                    if normalize_on:
+                        _RF = normalize(RF[inds,:])
+                        _DF = normalize(DF)
+                    else:
+                        _RF = RF[inds,:]
+                        _DF = DF
+
+                    # single train/test split
+                    X_train = _RF # recognition run feature set
+                    y_train = _RM.label.values # list of labels for the training set
+
+                    X_test = _DF
+                    y_test = DM.label.values
+                    clf = linear_model.LogisticRegression(penalty='l2',C=1).fit(X_train, y_train)
+
+                    ## add prediction probabilities to metadata matrix
+                    ## must sort so that trained are first, and control is last
+                    cats = list(clf.classes_)
+                    trained_index = cats.index([t for t in  trained_objs if t != trained_obj][0])
+                    c1_index = cats.index(control_objs[0]) ## this is not always the target
+                    c2_index = cats.index(control_objs[1]) ## this is not always the target
+                    ordering = [trained_index, c1_index, c2_index]
+                    probs.append(clf.predict_proba(X_test)[:,ordering])
+                    logprobs.append(np.log(clf.predict_proba(X_test)[:,ordering]))
+
+                if logged==True:
+                    out = logprobs
+                else:
+                    out = probs
+                    
+                # save out new columns by object name and by t1, t2, c1, c2:
+                DM['t1_prob'] = DM['{}_prob'.format(trained_objs[0])] = out[0][:,0]
+                DM['t2_prob'] = DM['{}_prob'.format(trained_objs[1])] = out[1][:,0]
+                DM['c1_prob'] = DM['{}_prob'.format(control_objs[0])] = (out[0][:,1] + out[1][:,1])/2.0
+                DM['c2_prob'] = DM['{}_prob'.format(control_objs[0])] = (out[0][:,2] + out[1][:,2])/2.0
+                
+                # we also want an 8way representation
 
             elif version=='3way':
 
@@ -486,7 +537,7 @@ def plot_summary_timecourse(ALLDM,
         proj_dir: root directory of project.
     
     output: 
-        saves PDF versions of plots in plots dir, which is located at top level of project directory
+        saves PNG versions of plots in plots dir, which is located at top level of project directory
     '''    
     
     subs = np.unique(ALLDM.subj.values)
@@ -576,7 +627,7 @@ def plot_summary_timecourse(ALLDM,
         if not os.path.exists(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop))):
             os.makedirs(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop)))
         plt.tight_layout()        
-        plt.savefig(os.path.join(proj_dir,'plots/{}/{}/{}/prob_timecourse_{}_by_{}_{}.pdf'.\
+        plt.savefig(os.path.join(proj_dir,'plots/{}/{}/{}/prob_timecourse_{}_by_{}_{}.png'.\
                     format(nb_name,lookup[this_iv],toop,this_roi,lookup[this_iv],version)))
         plt.close(fig)
 
@@ -653,7 +704,7 @@ def get_log_odds(ALLDM,
             roi.append(this_roi)
 
         ## save out big dataframe with all subjects and timepoints
-        x.to_csv(proj_dir+'csv/difference_logprobs_{}_{}_{}.csv'.format(version,this_roi,this_iv),index=False)
+        x.to_csv(os.path.join(proj_dir, 'csv/difference_logprobs_{}_{}_{}.csv'.format(version,this_roi,this_iv)),index=False)
 
     ## make dataframe with subject-level difference scores
     d = pd.DataFrame([sub_tf,sub_tc,sub_fc,roi])
@@ -664,10 +715,10 @@ def get_log_odds(ALLDM,
     ## output target-foil ratios
     if logged==True:
         print(d.groupby('roi')['target-foil'].apply(lambda x: np.mean(np.exp(x))))
-        d.to_csv(proj_dir+'csv/difference_logprobs_{}.csv'.format(version),index=False)
+        d.to_csv(os.path.join(proj_dir, 'csv/difference_logprobs_{}.csv'.format(version)),index=False)
     else:
         print(d.groupby('roi')['target-foil'].mean())
-        d.to_csv(proj_dir+'csv/difference_rawprobs_{}.csv'.format(version),index=False)
+        d.to_csv(os.path.join(proj_dir, 'csv/difference_rawprobs_{}.csv'.format(version)),index=False)
         
     return d
         
