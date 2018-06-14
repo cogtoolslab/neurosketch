@@ -354,8 +354,11 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                 DM['t2_prob'] = DM['{}_prob'.format(trained_objs[1])] = out[1][:,0]
                 DM['c1_prob'] = DM['{}_prob'.format(control_objs[0])] = (out[0][:,1] + out[1][:,1])/2.0
                 DM['c2_prob'] = DM['{}_prob'.format(control_objs[0])] = (out[0][:,2] + out[1][:,2])/2.0
+<<<<<<< HEAD
                 
                 # we also want an 8way representation
+=======
+>>>>>>> f0c8789c2223fc885dade150369dc8c5e6889879
 
             elif version=='3way':
 
