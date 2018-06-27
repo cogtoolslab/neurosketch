@@ -17,6 +17,8 @@ data/*
 *.synctex.gz
 *.DS_Store
 
+*.Rhistory
+
 # C extensions
 *.so
 
