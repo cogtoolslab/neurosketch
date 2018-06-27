@@ -8,6 +8,15 @@ __pycache__/
 data/*
 .DS_Store
 
+*.bbl
+*.aux
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.synctex.gz
+*.DS_Store
+
 # C extensions
 *.so
 
