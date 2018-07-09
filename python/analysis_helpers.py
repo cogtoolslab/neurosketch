@@ -236,6 +236,18 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                 voxel matrices and .csv metadata matrices
     '''
 
+    ## Handle slightly different naming for same ROIs in the drawing/recog data directories
+    # ROI labels in the drawing data directory
+    roi_list_draw = np.array(['V1Draw', 'V2Draw', 'LOCDraw', 'parietalDraw', 
+                         'smgDraw', 'sensoryDraw', 'motorDraw', 'frontalDraw'])
+    # ROI labels in the recog data directory
+    roi_list_recog = np.array(['V1Draw', 'V2Draw', 'LOCDraw', 'ParietalDraw', 
+                         'supraMarginalDraw', 'postCentralDraw', 'preCentralDraw', 'FrontalDraw'])
+    # bidirectional dictionaries to map from one to the other
+    draw_to_recog_roi_dict = dict(zip(roi_list_draw,roi_list_recog))
+    recog_to_draw_roi_dict = dict(zip(roi_list_recog,roi_list_draw))    
+    
+    # initialize "All Data Matrix"
     ALLDM = []
     ## loop through all subjects and rois
     Acc = []
@@ -244,7 +256,11 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
         acc = []
         for this_sub in sub_list:
             ## load subject data in
-            RM12, RF12 = load_recog_data(this_sub,this_roi,'12')
+            try:
+                RM12, RF12 = load_recog_data(this_sub,this_roi,'12')
+            except:
+                that_roi = draw_to_recog_roi_dict[this_roi]
+                RM12, RF12 = load_recog_data(this_sub,that_roi,'12')
             #RM34, RF34 = load_recog_data(this_sub,this_roi,'34')
             #RM = pd.concat([RM12,RM34])
             #RF = np.vstack((RF12,RF34))
