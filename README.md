@@ -66,7 +66,8 @@ There is a master DATA dir containing all processed fMRI data in standard format
 	- Interaction with object assignment? (mixed effects model)	
 
 4. Measure Informational Connectivity within Drawing Regions
-	- Which regions represent common information about target over time?
+	- Which regions represent information about target over time?
+	- How do patterns between regions capture information about target over time?
 	- What does this imply about organization of visual production system?
 
 
