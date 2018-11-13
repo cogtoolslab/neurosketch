@@ -1,3 +1,4 @@
+from __future__ import division
 import os
 import pandas as pd
 import numpy as np
@@ -76,13 +77,12 @@ def bootstrapCI(x,nIter):
         boot = x[inds]
         u.append(np.mean(boot))
 
-    p1 = len([i for i in u if i<0])/len(u) * 2
-    p2 = len([i for i in u if i>0])/len(u) * 2
-    p = np.min([p1,p2])
+    p1 = len([i for i in u if i<0])/len(u) * 2 ## first version of p-value reflects number of samples that have value below 0
+    p2 = len([i for i in u if i>0])/len(u) * 2 ## second version of p-value reflects number of samples that have value above 0
     U = np.mean(u)
     lb = np.percentile(u,2.5)
     ub = np.percentile(u,97.5)
-    return U,lb,ub,p
+    return U,lb,ub,p1,p2
 
 
 def get_fn_applied_to_prob_timecourse(iv,DM,func=None): 
