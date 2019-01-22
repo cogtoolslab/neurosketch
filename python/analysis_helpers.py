@@ -15,6 +15,7 @@ import scipy.stats as stats
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import seaborn as sns
+from IPython.display import clear_output
 sns.set_context('poster')
 colors = sns.color_palette("cubehelix", 5)
 
@@ -253,6 +254,7 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
     Acc = []
     for this_roi in roi_list:
         print('Now analyzing {} ...'.format(this_roi))
+        clear_output(wait=True)
         acc = []
         for this_sub in sub_list:
             ## load subject data in
