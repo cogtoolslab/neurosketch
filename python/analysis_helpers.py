@@ -722,12 +722,14 @@ def get_log_odds(ALLDM,
         x.to_csv(os.path.join(proj_dir, 'csv/difference_logprobs_{}_{}_{}.csv'.format(version,this_roi,this_iv)),index=False)
 
     ## make dataframe with subject-level difference scores
-    flat_sub_list = flatten([subs]*len(roi_list_recog))
+    substr = [str(i).zfill(7) for i in subs]
+    flat_sub_list = flatten([substr]*len(roi_list_recog))
     assert len(flat_sub_list)==len(roi)
     d = pd.DataFrame([sub_tf,sub_tc,sub_fc,roi,flat_sub_list])
     d = d.transpose()
     d.columns = ['target-foil','target-control','foil-control','roi','sub']
-    d = d.astype({'target-foil':'float64','target-control':'float64','foil-control':'float64'})
+    d = d.astype({'target-foil':'float64','target-control':'float64',
+                  'foil-control':'float64','sub':'str'})
 
     ## output target-foil ratios
     if logged==True:
