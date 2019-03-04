@@ -640,7 +640,7 @@ def plot_summary_timecourse(ALLDM,
             plt.axhline(0.25,linestyle=':',color='k')  
             plt.legend(bbox_to_anchor=(1.01, 0.8))  
             plt.gca().get_legend().remove()
-            plt.title('classifier evidence by condition in {}'.format(this_roi))
+            plt.title('object evidence in {}'.format(this_roi))
 
         else:
             plt.ylim(-0.3,0.3)
@@ -651,7 +651,7 @@ def plot_summary_timecourse(ALLDM,
         plt.tick_params(axis='both', which='major', labelsize=14)
         if not os.path.exists(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop))):
             os.makedirs(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop)))
-        plt.tight_layout(rect=[0,0,1,0.6])
+        plt.tight_layout(rect=[0,0,1,0.7])
         plt.savefig(os.path.join(proj_dir,'plots/{}/{}/{}/prob_timecourse_{}_by_{}_{}.pdf'.\
                     format(nb_name,lookup[this_iv],toop,this_roi,lookup[this_iv],version)))
         plt.close(fig)
