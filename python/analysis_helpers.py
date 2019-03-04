@@ -648,6 +648,7 @@ def plot_summary_timecourse(ALLDM,
             plt.axhline(0,linestyle=':',color='k')  
             plt.legend(bbox_to_anchor=(0.7, 1.01))                        
             plt.title('difference in classifier evidence by condition in {}'.format(this_roi))             
+        plt.xlabel('trial number')
         plt.xticks(np.arange(1,np.max(x['timePlusOne'].values)+1))
         plt.tick_params(axis='both', which='major', labelsize=14)
         if not os.path.exists(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop))):
