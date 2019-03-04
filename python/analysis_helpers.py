@@ -644,7 +644,7 @@ def plot_summary_timecourse(ALLDM,
         plt.xticks(np.arange(np.max(x[lookup[this_iv]].values)+1))
         if not os.path.exists(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop))):
             os.makedirs(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop)))
-#         plt.tight_layout()        
+        plt.tight_layout(rect=[0, 0, 1, 0.6])   
         plt.savefig(os.path.join(proj_dir,'plots/{}/{}/{}/prob_timecourse_{}_by_{}_{}.pdf'.\
                     format(nb_name,lookup[this_iv],toop,this_roi,lookup[this_iv],version)))
         plt.close(fig)
