@@ -18,6 +18,8 @@ import seaborn as sns
 from IPython.display import clear_output
 sns.set_context('poster')
 colors = sns.color_palette("cubehelix", 5)
+import matplotlib as mpl
+mpl.rcParams['pdf.fonttype'] = 42
 
 ###############################################################################################
 ################### HELPERS FOR predict_obj_during_drawing_from_recog_runs notebook ###########
@@ -560,6 +562,7 @@ def plot_summary_timecourse(ALLDM,
 
     ivs=['run_num','trial_num','time_point']
     assert this_iv in ivs    
+    sns.set_context('talk')
 
     for this_roi in roi_list:
         
@@ -618,7 +621,7 @@ def plot_summary_timecourse(ALLDM,
             x = x.transpose()
             x.columns = ['probability',lookup[this_iv],'condition','sub']        
             toop = 'difference'
-        #print(x)
+        #print(x)        
         fig = plt.figure(figsize=(8,4))              
         ## plot it
         sns.tsplot(data=x,
@@ -630,19 +633,19 @@ def plot_summary_timecourse(ALLDM,
         if render_cond==1:
             plt.ylim(0,0.5)
             plt.axhline(0.25,linestyle=':',color='k')  
-            plt.legend(bbox_to_anchor=(0.8, 1.01))  
-            plt.title('Classifier evidence by condition in {}'.format(this_roi))
+            plt.legend(bbox_to_anchor=(1.3, 1.01))  
+            plt.title('classifier evidence by condition in {}'.format(this_roi))
 
         else:
             plt.ylim(-0.3,0.3)
             plt.axhline(0,linestyle=':',color='k')  
             plt.legend(bbox_to_anchor=(0.7, 1.01))                        
-            plt.title('Difference in classifier evidence by condition in {}'.format(this_roi))             
+            plt.title('difference in classifier evidence by condition in {}'.format(this_roi))             
         plt.xticks(np.arange(np.max(x[lookup[this_iv]].values)+1))
         if not os.path.exists(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop))):
             os.makedirs(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop)))
-        plt.tight_layout()        
-        plt.savefig(os.path.join(proj_dir,'plots/{}/{}/{}/prob_timecourse_{}_by_{}_{}.png'.\
+#         plt.tight_layout()        
+        plt.savefig(os.path.join(proj_dir,'plots/{}/{}/{}/prob_timecourse_{}_by_{}_{}.pdf'.\
                     format(nb_name,lookup[this_iv],toop,this_roi,lookup[this_iv],version)))
         plt.close(fig)
 
