@@ -629,8 +629,9 @@ def plot_summary_timecourse(ALLDM,
         ## plot it
         color_picker = ['#dd4318','#0d61c6','#4a4b4c']
         sns.set_palette(color_picker)
+        x['timePlusOne'] = x[lookup[this_iv]].apply(lambda x: x+1)
         sns.tsplot(data=x,
-                  time=lookup[this_iv],
+                  time='timePlusOne',
                   unit='sub',
                   condition='condition',
                   value='probability',
@@ -647,7 +648,7 @@ def plot_summary_timecourse(ALLDM,
             plt.axhline(0,linestyle=':',color='k')  
             plt.legend(bbox_to_anchor=(0.7, 1.01))                        
             plt.title('difference in classifier evidence by condition in {}'.format(this_roi))             
-        plt.xticks(np.arange(np.max(x[lookup[this_iv]].values)+1))
+        plt.xticks(np.arange(1,np.max(x['timePlusOne'].values)+1))
         plt.tick_params(axis='both', which='major', labelsize=14)
         if not os.path.exists(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop))):
             os.makedirs(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop)))
