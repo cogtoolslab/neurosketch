@@ -14,12 +14,14 @@ from scipy.stats import norm, linregress
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+from matplotlib import rcParams
+rcParams['pdf.fonttype'] = 42
+rcParams.update({'figure.autolayout': True})   
 import seaborn as sns
 from IPython.display import clear_output
-sns.set_context('poster')
+sns.set_context('talk')
 colors = sns.color_palette("cubehelix", 5)
-import matplotlib as mpl
-mpl.rcParams['pdf.fonttype'] = 42
+
 
 ###############################################################################################
 ################### HELPERS FOR predict_obj_during_drawing_from_recog_runs notebook ###########
@@ -562,7 +564,7 @@ def plot_summary_timecourse(ALLDM,
 
     ivs=['run_num','trial_num','time_point']
     assert this_iv in ivs    
-    sns.set_context('talk')
+    
 
     for this_roi in roi_list:
         
@@ -621,9 +623,12 @@ def plot_summary_timecourse(ALLDM,
             x = x.transpose()
             x.columns = ['probability',lookup[this_iv],'condition','sub']        
             toop = 'difference'
-        #print(x)        
-        fig = plt.figure(figsize=(8,4))              
+        #print(x)   
+        fig = plt.figure(figsize=(8,4)) 
+        plt.subplot(111)
         ## plot it
+        color_picker = ['#dd4318','#0d61c6','#4a4b4c']
+        sns.set_palette(color_picker)
         sns.tsplot(data=x,
                   time=lookup[this_iv],
                   unit='sub',
@@ -633,7 +638,8 @@ def plot_summary_timecourse(ALLDM,
         if render_cond==1:
             plt.ylim(0,0.5)
             plt.axhline(0.25,linestyle=':',color='k')  
-            plt.legend(bbox_to_anchor=(1.3, 1.01))  
+            plt.legend(bbox_to_anchor=(1.01, 0.8))  
+            plt.gca().get_legend().remove()
             plt.title('classifier evidence by condition in {}'.format(this_roi))
 
         else:
@@ -642,9 +648,10 @@ def plot_summary_timecourse(ALLDM,
             plt.legend(bbox_to_anchor=(0.7, 1.01))                        
             plt.title('difference in classifier evidence by condition in {}'.format(this_roi))             
         plt.xticks(np.arange(np.max(x[lookup[this_iv]].values)+1))
+        plt.tick_params(axis='both', which='major', labelsize=14)
         if not os.path.exists(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop))):
             os.makedirs(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop)))
-        plt.tight_layout(rect=[0, 0, 1, 0.6])   
+        plt.tight_layout(rect=[0,0,1,0.6])
         plt.savefig(os.path.join(proj_dir,'plots/{}/{}/{}/prob_timecourse_{}_by_{}_{}.pdf'.\
                     format(nb_name,lookup[this_iv],toop,this_roi,lookup[this_iv],version)))
         plt.close(fig)
