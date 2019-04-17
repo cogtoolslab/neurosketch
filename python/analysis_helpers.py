@@ -27,6 +27,11 @@ colors = sns.color_palette("cubehelix", 5)
 ################### HELPERS FOR predict_obj_during_drawing_from_recog_runs notebook ###########
 ###############################################################################################
 
+curr_dir = os.getcwd()
+proj_dir = os.path.abspath(os.path.join(curr_dir,'..','..')) ## use relative paths
+data_dir = os.path.abspath(os.path.join(curr_dir,'..','..','data')) ## use relative paths 'D:\\data'
+results_dir = os.path.join(proj_dir, 'csv')
+
 ### globals
 #### Helper data loader functions
 def load_draw_meta(this_sub):
@@ -575,7 +580,7 @@ def make_prepostrecog_predictions(sub_list,roi_list,version='4way',test_phase='p
                 print 'Invalid test split, test_phase should be either "pre" or "post." '
             # identify control objects;
             # we wil train one classifier with
-            trained_objs = np.unique(DM.label.values)
+            trained_objs = np.unique(RM.label.values)
             control_objs = [i for i in ['bed','bench','chair','table'] if i not in trained_objs]
             probs = []
             logprobs = []
@@ -615,30 +620,30 @@ def make_prepostrecog_predictions(sub_list,roi_list,version='4way',test_phase='p
                 else:
                     out = probs
 
-                DM['t1_prob'] = out[:,0]
-                DM['t2_prob'] = out[:,1]
-                DM['c1_prob'] = out[:,2]
-                DM['c2_prob'] = out[:,3]
+                RMtest['t1_prob'] = out[:,0]
+                RMtest['t2_prob'] = out[:,1]
+                RMtest['c1_prob'] = out[:,2]
+                RMtest['c2_prob'] = out[:,3]
 
                 ## also save out new columns in the same order
                 if logged==True:
                     probs = np.log(clf.predict_proba(X_test))
                 else:
                     probs = clf.predict_proba(X_test)
-                DM['bed_prob'] = probs[:,0]
-                DM['bench_prob'] = probs[:,1]
-                DM['chair_prob'] = probs[:,2]
-                DM['table_prob'] = probs[:,3]
+                RMtest['bed_prob'] = probs[:,0]
+                RMtest['bench_prob'] = probs[:,1]
+                RMtest['chair_prob'] = probs[:,2]
+                RMtest['table_prob'] = probs[:,3]
                 
             
 
-            DM['subj'] = np.repeat(this_sub,DM.shape[0])
-            DM['roi'] = np.repeat(this_roi,DM.shape[0])
+            RMtest['subj'] = np.repeat(this_sub,RMtest.shape[0])
+            RMtest['roi'] = np.repeat(this_roi,RMtest.shape[0])
 
             if len(ALLDM)==0:
-                ALLDM = DM
+                ALLDM = RMtest
             else:
-                ALLDM = pd.concat([ALLDM,DM],ignore_index=True)
+                ALLDM = pd.concat([ALLDM,RMtest],ignore_index=True)
 
             acc.append(_acc) if version == '2wayDraw' else acc.append(clf.score(X_test, y_test))
 
@@ -769,7 +774,6 @@ def plot_summary_timecourse(ALLDM,
         plt.savefig(os.path.join(proj_dir,'plots/{}/{}/{}/prob_timecourse_{}_by_{}_{}.pdf'.\
                     format(nb_name,lookup[this_iv],toop,this_roi,lookup[this_iv],version)))
         plt.close(fig)
-
         
 def get_log_odds(ALLDM,
                  this_iv = 'trial_num',
