@@ -535,6 +535,118 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
     return ALLDM, Acc
 
 
+def make_prepostrecog_predictions(sub_list,roi_list,version='4way',test_phase='pre',logged=True):
+    '''
+    input:
+        sub_list: a list containing subject IDs
+        roi_list: a list containing roi names
+        version: a string from options: ['4way','3way','2way']
+            4way: trains to discriminate all four objects from recognition runs
+        test_phase: which recognition phase to test on, "pre" or "post"
+        logged: boolean. If true, return log-probabilities. If false, return raw probabilities.
+
+    assumes: that you have directories containing recognition run and drawing run data, consisting of paired .npy
+                voxel matrices and .csv metadata matrices
+    '''
+
+    ## Handle slightly different naming for same ROIs in the drawing/recog data directories
+
+    # ROI labels in the recog data directory
+    roi_list_recog = np.array(['V1Draw', 'V2Draw', 'LOCDraw', 'ParietalDraw', 
+                         'supraMarginalDraw', 'postCentralDraw', 'preCentralDraw', 'FrontalDraw'])
+  
+    # initialize "All Data Matrix"
+    ALLDM = []
+    ## loop through all subjects and rois
+    Acc = []
+    for this_roi in roi_list:
+        print('Now analyzing {} ...'.format(this_roi))
+        clear_output(wait=True)
+        acc = []
+        for this_sub in sub_list:
+            ## load subject data in
+            ## "localizer"
+            RM, RF = load_recog_data(this_sub,this_roi,'12')
+            if test_phase=='pre':
+                RMtest, RFtest = load_recog_data(this_sub,this_roi,'34')
+            elif test_phase=='post':
+                RMtest, RFtest = load_recog_data(this_sub,this_roi,'56')            
+            else:
+                print 'Invalid test split, test_phase should be either "pre" or "post." '
+            # identify control objects;
+            # we wil train one classifier with
+            trained_objs = np.unique(DM.label.values)
+            control_objs = [i for i in ['bed','bench','chair','table'] if i not in trained_objs]
+            probs = []
+            logprobs = []
+
+            if version=='4way':
+                ## normalize voxels within task
+                normalize_on = 1
+                if normalize_on:
+                    _RF = normalize(RF)
+                    _RFtest = normalize(RFtest)
+                else:
+                    _RF = RF
+                    _RFtest = RFtest
+
+                # single train/test split
+                X_train = _RF
+                y_train = RM.label.values
+
+                X_test = _RFtest
+                y_test = RMtest.label.values
+                clf = linear_model.LogisticRegression(penalty='l2',C=1).fit(X_train, y_train)
+
+                ## add prediction probabilities to metadata matrix
+                cats = clf.classes_
+                probs = clf.predict_proba(X_test)
+
+                ## add prediction probabilities to metadata matrix
+                ## must sort so that trained are first, and control is last
+                cats = list(clf.classes_)
+                _ordering = np.argsort(np.hstack((trained_objs,control_objs))) ## e.g., [chair table bench bed] ==> [3 2 0 1]
+                ordering = np.argsort(_ordering) ## get indices that sort from alphabetical to (trained_objs, control_objs)
+                probs = clf.predict_proba(X_test)[:,ordering] ## [table chair bed bench]
+                logprobs = np.log(clf.predict_proba(X_test)[:,ordering])                               
+                
+                if logged==True:
+                    out = logprobs
+                else:
+                    out = probs
+
+                DM['t1_prob'] = out[:,0]
+                DM['t2_prob'] = out[:,1]
+                DM['c1_prob'] = out[:,2]
+                DM['c2_prob'] = out[:,3]
+
+                ## also save out new columns in the same order
+                if logged==True:
+                    probs = np.log(clf.predict_proba(X_test))
+                else:
+                    probs = clf.predict_proba(X_test)
+                DM['bed_prob'] = probs[:,0]
+                DM['bench_prob'] = probs[:,1]
+                DM['chair_prob'] = probs[:,2]
+                DM['table_prob'] = probs[:,3]
+                
+            
+
+            DM['subj'] = np.repeat(this_sub,DM.shape[0])
+            DM['roi'] = np.repeat(this_roi,DM.shape[0])
+
+            if len(ALLDM)==0:
+                ALLDM = DM
+            else:
+                ALLDM = pd.concat([ALLDM,DM],ignore_index=True)
+
+            acc.append(_acc) if version == '2wayDraw' else acc.append(clf.score(X_test, y_test))
+
+        Acc.append(acc)
+
+    return ALLDM, Acc
+
+
 def plot_summary_timecourse(ALLDM, 
                             this_iv='trial_num',
                             roi_list=['V1','V2','LOC'],
