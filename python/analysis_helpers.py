@@ -77,7 +77,7 @@ def normalize(X):
     X = X / np.maximum(X.std(0), 1e-5)
     return X
 
-def bootstrapCI(x,nIter):
+def bootstrapCI(x,nIter=1000):
     '''
     input: x is an array
     '''
