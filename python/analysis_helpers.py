@@ -176,14 +176,13 @@ def get_prob_timecourse(iv,DM,version='4way'):
     return target, foil, control
 
 def get_log_prob_timecourse(iv,DM,version='4way'):
-    trained_objs = np.unique(DM.label.values)
-    control_objs = [i for i in ['bed','bench','chair','table'] if i not in trained_objs]
+
+    t1 = DM['t1_name'].unique()[0]
+    t2 = DM['t2_name'].unique()[0]
+    c1 = DM['c1_name'].unique()[0]
+    c2 = DM['c2_name'].unique()[0]    
     
     if version[:4]=='4way':
-        t1 = trained_objs[0]
-        t2 = trained_objs[1]
-        c1 = control_objs[0]
-        c2 = control_objs[1]
         target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
                        DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse
         foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
@@ -193,8 +192,6 @@ def get_log_prob_timecourse(iv,DM,version='4way'):
                             DM[DM.label==t2].groupby(iv)['c1_prob'].mean().values,
                             DM[DM.label==t2].groupby(iv)['c2_prob'].mean().values)).mean(0) ## control timecourse
     elif version[:4]=='3way':
-        t1 = trained_objs[0]
-        t2 = trained_objs[1]
         target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
                        DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse; mean is taken over what?
         foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
@@ -203,8 +200,6 @@ def get_log_prob_timecourse(iv,DM,version='4way'):
                             DM[DM.label==t2].groupby(iv)['c_prob'].mean().values)).mean(0) ## control timecourse
 
     elif version[:4]=='2way':
-        t1 = trained_objs[0]
-        t2 = trained_objs[1]
         target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
                        DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse; mean is taken over what?
         foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
@@ -277,7 +272,7 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
             #RF = np.vstack((RF12,RF34))
             RM = RM12
             RF = RF12
-            DM, DF = load_draw_data(this_sub,this_roi)
+            c
             assert RF.shape[1]==DF.shape[1] ## that number of voxels is identical
 
             # identify control objects;
@@ -326,6 +321,12 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                 DM['t2_prob'] = out[:,1]
                 DM['c1_prob'] = out[:,2]
                 DM['c2_prob'] = out[:,3]
+                
+                ## add identity of trained objects and control objects to dataframe
+                DM['t1_name'] = trained_objs[0]
+                DM['t2_name'] = trained_objs[1]                
+                DM['c1_name'] = control_objs[0] 
+                DM['c2_name'] = control_objs[1]                     
 
                 ## also save out new columns in the same order
                 if logged==True:
@@ -381,6 +382,13 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                 DM['t2_prob'] = DM['{}_prob'.format(trained_objs[1])] = out[1][:,0]
                 DM['c1_prob'] = DM['{}_prob'.format(control_objs[0])] = (out[0][:,1] + out[1][:,1])/2.0
                 DM['c2_prob'] = DM['{}_prob'.format(control_objs[0])] = (out[0][:,2] + out[1][:,2])/2.0
+                
+                ## add identity of trained objects and control objects to dataframe
+                DM['t1_name'] = trained_objs[0]
+                DM['t2_name'] = trained_objs[1]                
+                DM['c1_name'] = control_objs[0] 
+                DM['c2_name'] = control_objs[1]                        
+                
             elif version=='3way':
 
                 for ctrl in control_objs:
@@ -423,6 +431,12 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
                 DM['t1_prob'] = (out[0][:,0] + out[1][:,0])/2.0
                 DM['t2_prob'] = (out[0][:,1] + out[1][:,1])/2.0
                 DM['c_prob'] = (out[0][:,2] + out[1][:,2])/2.0
+                
+                ## add identity of trained objects and control objects to dataframe
+                DM['t1_name'] = trained_objs[0]
+                DM['t2_name'] = trained_objs[1]                
+                DM['c1_name'] = control_objs[0] 
+                DM['c2_name'] = control_objs[1]                        
 
             elif version=='2way':
 
@@ -464,6 +478,12 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
 
                 DM['t1_prob'] = out[:,0]
                 DM['t2_prob'] = out[:,1]
+                
+                ## add identity of trained objects and control objects to dataframe
+                DM['t1_name'] = trained_objs[0]
+                DM['t2_name'] = trained_objs[1]                
+                DM['c1_name'] = control_objs[0] 
+                DM['c2_name'] = control_objs[1]                   
 
             elif version=='2wayDraw':
                 INTDM = []
@@ -572,6 +592,7 @@ def make_prepostrecog_predictions(sub_list,roi_list,version='4way',test_phase='p
             ## load subject data in
             ## "localizer"
             RM, RF = load_recog_data(this_sub,this_roi,'12')
+            DM, DF = load_draw_data(this_sub,this_roi)
             if test_phase=='pre':
                 RMtest, RFtest = load_recog_data(this_sub,this_roi,'34')
             elif test_phase=='post':
@@ -580,8 +601,10 @@ def make_prepostrecog_predictions(sub_list,roi_list,version='4way',test_phase='p
                 print 'Invalid test split, test_phase should be either "pre" or "post." '
             # identify control objects;
             # we wil train one classifier with
-            trained_objs = np.unique(RM.label.values)
+            
+            trained_objs = np.unique(DM.label.values)
             control_objs = [i for i in ['bed','bench','chair','table'] if i not in trained_objs]
+            
             probs = []
             logprobs = []
 
@@ -635,7 +658,11 @@ def make_prepostrecog_predictions(sub_list,roi_list,version='4way',test_phase='p
                 RMtest['chair_prob'] = probs[:,2]
                 RMtest['table_prob'] = probs[:,3]
                 
-            
+                ## add identity of trained objects and control objects to dataframe
+                RMtest['t1_name'] = trained_objs[0]
+                RMtest['t2_name'] = trained_objs[1]                
+                RMtest['c1_name'] = control_objs[0] 
+                RMtest['c2_name'] = control_objs[1]             
 
             RMtest['subj'] = np.repeat(this_sub,RMtest.shape[0])
             RMtest['roi'] = np.repeat(this_roi,RMtest.shape[0])
