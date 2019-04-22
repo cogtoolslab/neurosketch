@@ -180,9 +180,16 @@ def get_log_prob_timecourse(iv,DM,version='4way'):
     t1 = DM['t1_name'].unique()[0]
     t2 = DM['t2_name'].unique()[0]
     c1 = DM['c1_name'].unique()[0]
-    c2 = DM['c2_name'].unique()[0]    
+    c2 = DM['c2_name'].unique()[0]   
     
-    if version[:4]=='4way':
+    if DM.shape[0]==160: ## then this is a recog run, so log prob timecourse is computed differently
+        target = np.hstack((DM[DM.label==t1]['t1_prob'].values,DM[DM.label==t2]['t2_prob'].values))
+        foil = np.hstack((DM[DM.label==t1]['t2_prob'].values,DM[DM.label==t2]['t1_prob'].values))
+        c1 = np.hstack((DM[DM.label==t1]['c1_prob'].values,DM[DM.label==t2]['c1_prob'].values))
+        c2 = np.hstack((DM[DM.label==t1]['c2_prob'].values,DM[DM.label==t2]['c2_prob'].values))
+        control = np.vstack((c1,c2)).mean(0)    
+    
+    elif version[:4]=='4way': ## assuming that this is a drawing run
         target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
                        DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse
         foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
@@ -262,6 +269,7 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
         acc = []
         for this_sub in sub_list:
             ## load subject data in
+            DM, DF = load_draw_data(this_sub,this_roi)
             try:
                 RM12, RF12 = load_recog_data(this_sub,this_roi,'12')
             except:
@@ -272,7 +280,7 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
             #RF = np.vstack((RF12,RF34))
             RM = RM12
             RF = RF12
-            c
+            
             assert RF.shape[1]==DF.shape[1] ## that number of voxels is identical
 
             # identify control objects;
@@ -592,7 +600,7 @@ def make_prepostrecog_predictions(sub_list,roi_list,version='4way',test_phase='p
             ## load subject data in
             ## "localizer"
             RM, RF = load_recog_data(this_sub,this_roi,'12')
-            DM, DF = load_draw_data(this_sub,this_roi)
+            DM, DF = load_draw_data(this_saub,this_roi)
             if test_phase=='pre':
                 RMtest, RFtest = load_recog_data(this_sub,this_roi,'34')
             elif test_phase=='post':
