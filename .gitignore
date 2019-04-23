@@ -106,3 +106,4 @@ ENV/
 .ropeproject
 
 *.npy
+.Rproj.user
