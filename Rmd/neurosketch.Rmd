@@ -1,0 +1,26 @@
+---
+title: "1_prepost_recognition_classifier"
+output: html_notebook
+---
+
+## load necessary packages
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggthemes)
+library(lme4)
+library(lmerTest)
+library(tidyboot)
+```
+
+## import data
+```{r}
+d <- read_csv('../csv/prepost_recog_accuracy.csv')  %>%
+   filter(roi_formatted == 'V1') 
+
+m <- lmer(correct ~ phase * trained + (1 | subj), data = d)
+summary(m)
+```
+
+
+
