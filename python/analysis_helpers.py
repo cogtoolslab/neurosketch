@@ -600,7 +600,7 @@ def make_prepostrecog_predictions(sub_list,roi_list,version='4way',test_phase='p
             ## load subject data in
             ## "localizer"
             RM, RF = load_recog_data(this_sub,this_roi,'12')
-            DM, DF = load_draw_data(this_saub,this_roi)
+            DM, DF = load_draw_data(this_sub,this_roi)
             if test_phase=='pre':
                 RMtest, RFtest = load_recog_data(this_sub,this_roi,'34')
             elif test_phase=='post':
