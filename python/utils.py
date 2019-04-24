@@ -23,19 +23,15 @@ sns.set_context('talk')
 colors = sns.color_palette("cubehelix", 5)
 
 
-###############################################################################################
 ################### GLOBALS ###################################################################
-###############################################################################################
+
 curr_dir = os.getcwd()
 proj_dir = os.path.abspath(os.path.join(curr_dir,'..','..')) ## use relative paths
 data_dir = os.path.abspath(os.path.join(curr_dir,'..','..','data')) ## use relative paths 'D:\\data'
 results_dir = os.path.join(proj_dir, 'csv')
 
-###############################################################################################
 ################### GENERAL HELPERS ###########################################################
-###############################################################################################
 
-#### Helper data loader functions
 def load_draw_meta(this_sub):
     this_file = 'metadata_{}_drawing.csv'.format(this_sub)
     x = pd.read_csv(os.path.join(path_to_draw,this_file))
@@ -151,29 +147,24 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
     ## loop through all subjects and rois
     Acc = []
     for this_roi in roi_list:
-        print('Now analyzing {} ...'.format(this_roi))
-        clear_output(wait=True)
         acc = []
         for this_sub in sub_list:
+            print('Now analyzing ROI: {} from subject: {} ...'.format(this_roi,this_sub))
+            clear_output(wait=True)            
             ## load subject data in
             DM, DF = load_draw_data(this_sub,this_roi)
             try:
-                RM12, RF12 = load_recog_data(this_sub,this_roi,'12')
+                RM, RF = load_recog_data(this_sub,this_roi,'12')
             except:
                 that_roi = draw_to_recog_roi_dict[this_roi]
-                RM12, RF12 = load_recog_data(this_sub,that_roi,'12')
-            #RM34, RF34 = load_recog_data(this_sub,this_roi,'34')
-            #RM = pd.concat([RM12,RM34])
-            #RF = np.vstack((RF12,RF34))
-            RM = RM12
-            RF = RF12
+                RM, RF = load_recog_data(this_sub,that_roi,'12')
             
             assert RF.shape[1]==DF.shape[1] ## that number of voxels is identical
 
             # identify control objects;
             # we wil train one classifier with
-            trained_objs = np.unique(DM.label.values)
-            control_objs = [i for i in ['bed','bench','chair','table'] if i not in trained_objs]
+            trained_objs = sorted(np.unique(DM.label.values))
+            control_objs = sorted([i for i in ['bed','bench','chair','table'] if i not in trained_objs])
             probs = []
             logprobs = []
 
@@ -729,15 +720,14 @@ def get_log_odds(ALLDM,
     subs = np.unique(ALLDM['subj'].values)
     lookup = dict(zip(['trial_num','run_num','time_point'],['repetition','run','TR']))
     
-    for this_roi in roi_list_recog:
-
+    for this_roi in roi_list:
         T = []
         F = []
         C = []
         Sub = []
         for sub in subs:
-            inds = (ALLDM['roi']==this_roi) & (ALLDM['subj']==sub) if this_roi != 'VGG' else (ALLDM['roi']==this_roi) & (ALLDM['subj']==sub) & (ALLDM['time_point'] == 23)
-            t,f,c = get_log_prob_timecourse(this_iv,ALLDM[inds],version=version) if logged else get_prob_timecourse(this_iv,ALLDM[inds],version=version)
+            inds = (ALLDM['roi']==this_roi) & (ALLDM['subj']==sub) 
+            t,f,c = get_log_prob_timecourse(this_iv,ALLDM[inds],version=version)
             if len(T)==0:
                 T = t
                 F = f
@@ -773,7 +763,7 @@ def get_log_odds(ALLDM,
             roi.append(this_roi)
 
         ## save out big dataframe with all subjects and timepoints
-        x.to_csv(os.path.join(proj_dir, 'csv/object_classifier_logprobs_{}_{}_{}.csv'.format(phase,this_roi,this_iv)),index=False)
+        x.to_csv(os.path.join(proj_dir, 'csv/roi/object_classifier_logprobs_{}_{}_{}.csv'.format(phase,this_roi,this_iv)),index=False)
 
     ## make dataframe with subject-level difference scores
     substr = [str(i).zfill(7) for i in subs]
@@ -809,7 +799,8 @@ def get_log_prob_timecourse(iv,DM,version='4way'):
         c2 = np.hstack((DM[DM.label==t1]['c2_prob'].values,DM[DM.label==t2]['c2_prob'].values))
         control = np.vstack((c1,c2)).mean(0)    
     
-    elif version[:4]=='4way': ## assuming that this is a drawing run
+    if version[:4]=='4way': ## assuming that this is a drawing run             
+        
         target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
                        DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse
         foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
@@ -834,7 +825,59 @@ def get_log_prob_timecourse(iv,DM,version='4way'):
 
         control = np.zeros(len(foil))
 
-    return target, foil, control        
+    return target, foil, control 
+
+
+## plotting helper
+def get_prob_timecourse(iv,DM,version='4way'):
+    trained_objs = np.unique(DM.label.values)
+    control_objs = [i for i in ['bed','bench','chair','table'] if i not in trained_objs]
+    
+    DM.rename(columns={'t1_prob':'t1_logprob','t2_prob':'t2_logprob',
+                      'c1_prob':'c1_logprob','c2_prob':'c2_logprob'},inplace=True)
+    t1_prob = np.exp(DM['t1_logprob']).values
+    DM = DM.assign(t1_prob=pd.Series(t1_prob).values)
+    t2_prob = np.exp(DM['t2_logprob']).values
+    DM = DM.assign(t2_prob=pd.Series(t2_prob).values)
+    c1_prob = np.exp(DM['c1_logprob']).values
+    DM = DM.assign(c1_prob=pd.Series(c1_prob).values)
+    c2_prob = np.exp(DM['c2_logprob']).values
+    DM = DM.assign(c2_prob=pd.Series(c2_prob).values)    
+
+    if version[:4]=='4way':
+        t1 = trained_objs[0]
+        t2 = trained_objs[1]
+        c1 = control_objs[0]
+        c2 = control_objs[1]
+        target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse
+        foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
+        control = np.vstack((DM[DM.label==t1].groupby(iv)['c1_prob'].mean().values,
+                            DM[DM.label==t1].groupby(iv)['c2_prob'].mean().values,
+                            DM[DM.label==t2].groupby(iv)['c1_prob'].mean().values,
+                            DM[DM.label==t2].groupby(iv)['c2_prob'].mean().values)).mean(0) ## control timecourse
+    elif version[:4]=='3way':
+        t1 = trained_objs[0]
+        t2 = trained_objs[1]
+        target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse; mean is taken over what?
+        foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
+        control = np.vstack((DM[DM.label==t1].groupby(iv)['c_prob'].mean().values,
+                            DM[DM.label==t2].groupby(iv)['c_prob'].mean().values)).mean(0) ## control timecourse
+
+    elif version[:4]=='2way':
+        t1 = trained_objs[0]
+        t2 = trained_objs[1]
+        target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse; mean is taken over what?
+        foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
+
+        control = np.zeros(len(foil))
+
+    return target, foil, control
         
 def preprocess_acc_array(Acc,phase='draw', 
                          roi_list = ['V1', 'V2', 'LOC', 'FUS', 'PHC', 'IT', 'ENT', 'PRC', 'HC'],
