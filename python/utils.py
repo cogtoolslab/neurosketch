@@ -452,6 +452,7 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
 
         Acc.append(acc)
 
+    Acc = np.array(Acc)
     return ALLDM, Acc
 
 
@@ -570,7 +571,8 @@ def make_prepostrecog_predictions(sub_list,roi_list,version='4way',test_phase='p
             acc.append(_acc) if version == '2wayDraw' else acc.append(clf.score(X_test, y_test))
 
         Acc.append(acc)
-
+        
+    Acc = np.array(Acc)
     return ALLDM, Acc
 
 
@@ -697,7 +699,166 @@ def plot_summary_timecourse(ALLDM,
                     format(nb_name,lookup[this_iv],toop,this_roi,lookup[this_iv],version)))
         plt.close(fig)    
 
+        
+def get_log_odds(ALLDM,
+                 this_iv = 'trial_num',
+                 roi_list = ['V1','V2'],
+                 phase = 'NOPHASE',
+                 version='4way',
+                 logged=True,
+                 proj_dir='../'):
+    '''
+    input: 
+        ALLDM
+        this_iv: options are ['run_num','trial_num','time_point']
+        roi_list: list of ROIs
+        version: which N-way classifier ['2way','3way','4way']
+        logged: True if using log probabilities to compute odds, False if not
+        proj_dir: path to root of project directory
+    output: 
+        d: pandas dataframe containing difference in log probabilities (log odds)
+        CSV files with prefix "difference_logprobs"
+        prints log odds to console
+    '''
 
+    sub_tf = []
+    sub_tc = []
+    sub_fc = []
+    roi = []
+    
+    subs = np.unique(ALLDM['subj'].values)
+    lookup = dict(zip(['trial_num','run_num','time_point'],['repetition','run','TR']))
+    
+    for this_roi in roi_list_recog:
+
+        T = []
+        F = []
+        C = []
+        Sub = []
+        for sub in subs:
+            inds = (ALLDM['roi']==this_roi) & (ALLDM['subj']==sub) if this_roi != 'VGG' else (ALLDM['roi']==this_roi) & (ALLDM['subj']==sub) & (ALLDM['time_point'] == 23)
+            t,f,c = get_log_prob_timecourse(this_iv,ALLDM[inds],version=version) if logged else get_prob_timecourse(this_iv,ALLDM[inds],version=version)
+            if len(T)==0:
+                T = t
+                F = f
+                C = c
+                DTF = t-f               
+                DTC = t-c
+                DFC = f-c
+            else:
+                T = np.hstack((T,t))
+                F = np.hstack((F,f))        
+                C = np.hstack((C,c)) 
+                DTF = np.hstack((DTF,t-f))                
+                DTC = np.hstack((DTC,t-c))
+                DFC = np.hstack((DFC,f-c))
+            Sub.append([sub]*len(t))   
+
+        ## make longform version of dataframe to use in tsplot (difference btw conditions)                    
+        Trial = np.tile(np.arange(len(t)),len(subs)*3)
+        Condition = np.repeat(['target-foil','target-control','foil-control'],len(T))
+        Sub = np.tile(np.array(flatten(Sub)),3)
+        Prob = np.hstack((DTF,DTC,DFC))        
+        assert len(Trial)==len(Condition)
+        assert len(Sub)==len(Prob)
+        assert len(Condition)==len(Sub)
+        x = pd.DataFrame([Prob,Trial,Condition,Sub])
+        x = x.transpose()
+        x.columns = ['probability',lookup[this_iv],'condition','sub']
+
+        for this_sub in subs:
+            sub_tf.append(x[(x['condition']=='target-foil') & (x['sub']==this_sub)]['probability'].mean())
+            sub_tc.append(x[(x['condition']=='target-control') & (x['sub']==this_sub)]['probability'].mean())  
+            sub_fc.append(x[(x['condition']=='foil-control') & (x['sub']==this_sub)]['probability'].mean()) 
+            roi.append(this_roi)
+
+        ## save out big dataframe with all subjects and timepoints
+        x.to_csv(os.path.join(proj_dir, 'csv/object_classifier_logprobs_{}_{}_{}.csv'.format(phase,this_roi,this_iv)),index=False)
+
+    ## make dataframe with subject-level difference scores
+    substr = [str(i).zfill(7) for i in subs]
+    flat_sub_list = flatten([substr]*len(roi_list_recog))
+    assert len(flat_sub_list)==len(roi)
+    d = pd.DataFrame([sub_tf,sub_tc,sub_fc,roi,flat_sub_list])
+    d = d.transpose()
+    d.columns = ['target-foil','target-control','foil-control','roi','sub']
+    d = d.astype({'target-foil':'float64','target-control':'float64',
+                  'foil-control':'float64','sub':'str'})
+
+    ## output target-foil ratios
+    if logged==True:
+        print(d.groupby('roi')['target-foil'].apply(lambda x: np.mean(np.exp(x))))
+        d.to_csv(os.path.join(proj_dir, 'csv/object_classifier_logodds_{}.csv'.format(phase)),index=False)
+    else:
+        print(d.groupby('roi')['target-foil'].mean())
+        d.to_csv(os.path.join(proj_dir, 'csv/object_classifier_rawprobs_{}.csv'.format(phase)),index=False)
+        
+    return d        
+        
+def get_log_prob_timecourse(iv,DM,version='4way'):
+
+    t1 = DM['t1_name'].unique()[0]
+    t2 = DM['t2_name'].unique()[0]
+    c1 = DM['c1_name'].unique()[0]
+    c2 = DM['c2_name'].unique()[0]   
+    
+    if DM.shape[0]==160: ## then this is a recog run, so log prob timecourse is computed differently
+        target = np.hstack((DM[DM.label==t1]['t1_prob'].values,DM[DM.label==t2]['t2_prob'].values))
+        foil = np.hstack((DM[DM.label==t1]['t2_prob'].values,DM[DM.label==t2]['t1_prob'].values))
+        c1 = np.hstack((DM[DM.label==t1]['c1_prob'].values,DM[DM.label==t2]['c1_prob'].values))
+        c2 = np.hstack((DM[DM.label==t1]['c2_prob'].values,DM[DM.label==t2]['c2_prob'].values))
+        control = np.vstack((c1,c2)).mean(0)    
+    
+    elif version[:4]=='4way': ## assuming that this is a drawing run
+        target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse
+        foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
+        control = np.vstack((DM[DM.label==t1].groupby(iv)['c1_prob'].mean().values,
+                            DM[DM.label==t1].groupby(iv)['c2_prob'].mean().values,
+                            DM[DM.label==t2].groupby(iv)['c1_prob'].mean().values,
+                            DM[DM.label==t2].groupby(iv)['c2_prob'].mean().values)).mean(0) ## control timecourse
+    elif version[:4]=='3way':
+        target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse; mean is taken over what?
+        foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
+        control = np.vstack((DM[DM.label==t1].groupby(iv)['c_prob'].mean().values,
+                            DM[DM.label==t2].groupby(iv)['c_prob'].mean().values)).mean(0) ## control timecourse
+
+    elif version[:4]=='2way':
+        target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse; mean is taken over what?
+        foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
+                       DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
+
+        control = np.zeros(len(foil))
+
+    return target, foil, control        
+        
+def preprocess_acc_array(Acc,phase='draw', 
+                         roi_list = ['V1', 'V2', 'LOC', 'FUS', 'PHC', 'IT', 'ENT', 'PRC', 'HC'],
+                         sub_list = ['0110171', '0110172', '0111171', '0112171', '0112172', '0112173',
+                                   '0113171', '0115174', '0117171', '0118171', '0118172', '0119171',
+                                   '0119172', '0119173', '0119174', '0120171', '0120172', '0120173',
+                                   '0123171', '0123173', '0124171', '0125171', '0125172', '1121161',
+                                   '1130161', '1202161', '1203161', '1206161', '1206162', '1206163',
+                                   '1207162']):
+    '''
+    called in notebook 1_object_evidence_during_recognition
+    '''
+    
+    A = pd.DataFrame(Acc.T)
+    A.columns = roi_list
+    A['sub'] = sub_list
+    A['phase'] = phase
+    A1 = pd.melt(A, 
+                id_vars=['sub','phase'], 
+                var_name='roi',
+                value_vars=roi_list, 
+                value_name='acc') 
+    return A1        
+        
 def add_target_prob_column(df):
     '''
     df is dataframe, e.g., ALLPRE or ALLPOST that contains classifier probabilities for recognition runs
