@@ -1126,4 +1126,19 @@ def postprocess_prepost_rawprobs(prepost):
     
     return x2
 
-        
+def resample_subs(D,
+                  groupby=['roi'],
+                  random_state=0):
+    
+    Dboot = D.groupby(['roi']).apply(lambda x: x.sample(n=len(x), replace=True, random_state=random_state))
+    cols = Dboot.columns
+    Dboot = Dboot.xs(cols,axis=1,drop_level=True).reset_index(drop=True)
+    return Dboot
+
+def get_corr(x,y,rounding=5):
+    return np.round(stats.pearsonr(x,y)[0],rounding)
+
+def get_ci_bounds(x):
+    lb = np.round(np.percentile(x,2.5),5)
+    ub = np.round(np.percentile(x,97.5),5)
+    return (lb,ub)
