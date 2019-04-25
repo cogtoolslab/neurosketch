@@ -1082,5 +1082,48 @@ def add_target_prob_column(df):
     
     return df
 
+def postprocess_prepost_rawprobs(prepost):
+    
+    '''
+    computes variuos pre-post learning-related metrics for trained objects 
+    only applied to recognition trials for trained objects    
+    '''
+    
+    x = prepost[prepost['trained']==True].groupby(['roi_formatted','subj','phase'])['target_prob_raw'].mean().reset_index()
+    x['foil_prob_raw'] = prepost[prepost['trained']==True].groupby(['roi_formatted','subj','phase'])['foil_prob_raw'].mean().reset_index()['foil_prob_raw']
+    ## split then splice together so that each row contains subject's own pre and post probs, then add raw prob difference column
+    x2 = x[x['phase']=='pre'].reset_index().join(x[x['phase']=='post'].reset_index(),rsuffix='_post', lsuffix='_pre')
+
+    ######### raw probabilities ########
+    ## raw prob prepost changes within target, and within foil
+    x2['target_rawprob_postpre'] = x2['target_prob_raw_post'] - x2['target_prob_raw_pre']
+    x2['foil_rawprob_postpre'] = x2['foil_prob_raw_post'] - x2['foil_prob_raw_pre']
+
+    ## raw probs target vs. foil in each phase
+    x2['target_foil_rawprob_pre'] = x2['target_prob_raw_pre'] - x2['foil_prob_raw_pre']
+    x2['target_foil_rawprob_post'] = x2['target_prob_raw_post'] - x2['foil_prob_raw_post']
+
+    ## raw probs prepost change in target vs. foil
+    x2['target_foil_rawprob_postpre'] =  x2['target_foil_rawprob_post'] - x2['target_foil_rawprob_pre']
+
+    ######### log odds ########
+    ## get log probs and get log odds column
+    x2['target_logprob_pre'] = np.log(x2['target_prob_raw_pre'])
+    x2['target_logprob_post'] = np.log(x2['target_prob_raw_post'])
+    x2['foil_logprob_pre'] = np.log(x2['foil_prob_raw_pre'])
+    x2['foil_logprob_post'] = np.log(x2['foil_prob_raw_post'])
+
+    ## log odds target vs. foil in each phase
+    x2['target_foil_logodds_pre'] = x2['target_logprob_pre'] - x2['foil_logprob_pre']
+    x2['target_foil_logodds_post'] = x2['target_logprob_post'] - x2['foil_logprob_post']
+
+    ## log odds for change within target, and within foil
+    x2['target_logodds_postpre'] = x2['target_logprob_post'] - x2['target_logprob_pre']
+    x2['foil_logodds_postpre'] = x2['foil_logprob_post'] - x2['foil_logprob_pre']
+
+    ## log odds prepost change in target vs. foil
+    x2['target_foil_logodds_postpre'] = x2['target_logodds_postpre'] - x2['foil_logodds_postpre']
+    
+    return x2
 
         
