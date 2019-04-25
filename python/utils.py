@@ -447,6 +447,140 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
     return ALLDM, Acc
 
 
+def make_prepostrecog_predictions_withinphase(sub_list,roi_list,version='4way',test_phase='pre',logged=True):
+    '''
+    input:
+        sub_list: a list containing subject IDs
+        roi_list: a list containing roi names
+        version: a string from options: ['4way','3way','2way']
+            4way: trains to discriminate all four objects from recognition runs
+        test_phase: which recognition phase to test on, "pre" or "post"
+        logged: boolean. If true, return log-probabilities. If false, return raw probabilities.
+
+    assumes: that you have directories containing recognition run and drawing run data, consisting of paired .npy
+                voxel matrices and .csv metadata matrices
+    '''
+
+    ## Handle slightly different naming for same ROIs in the drawing/recog data directories
+
+    # ROI labels in the recog data directory
+    roi_list_recog = np.array(['V1Draw', 'V2Draw', 'LOCDraw', 'ParietalDraw', 
+                         'supraMarginalDraw', 'postCentralDraw', 'preCentralDraw', 'FrontalDraw'])
+  
+    # initialize "All Data Matrix"
+    ALLDM = []
+    ## loop through all subjects and rois
+    Acc = []
+    for this_roi in roi_list:
+        clear_output(wait=True)
+        acc = []
+        for this_sub in sub_list:
+            ## load subject data in
+            DM, DF = load_draw_data(this_sub,this_roi)
+            RM12, RF12 = load_recog_data(this_sub,this_roi,'12')
+            if test_phase=='pre':
+                RM, RF = load_recog_data(this_sub,this_roi,'34')
+            elif test_phase=='post':
+                RM, RF = load_recog_data(this_sub,this_roi,'56')            
+            else:
+                print 'Invalid test split, test_phase should be either "pre" or "post." '
+
+            ## loop through train/test split
+            _acc = []
+            for name, group in RM.groupby('run_num'):
+                print('Now analyzing {} from {} ...'.format(this_roi, this_sub))    
+                print 'train run: {}, test run: {}'.format(name, np.setdiff1d([1,2],name)[0])
+                clear_output(wait=True)
+
+                ## train/test split by run
+                RMtrain = group 
+                RFtrain = RF[RMtrain.index,:]
+                
+#                 ## concat data with initial recognition run 
+#                 RMtrain = pd.concat([group,RM12],axis=0)
+#                 RFtrain = np.vstack((RFtrain,RF12))
+# #                 print(RMtrain.shape, RFtrain.shape)
+                
+                RMtest = RM[RM['run_num']==np.setdiff1d([1,2],name)[0]] 
+                RFtest = RF[RMtest.index,:]
+
+                # identify control objects (the only use of DM in this function)
+                trained_objs = np.unique(DM.label.values)
+                control_objs = [i for i in ['bed','bench','chair','table'] if i not in trained_objs]
+
+                probs = []
+                logprobs = []
+
+                ## normalize voxels within task
+                normalize_on = 1
+                if normalize_on:
+                    _RFtrain = normalize(RFtrain)
+                    _RFtest = normalize(RFtest)
+                else:
+                    _RFtrain = RFtrain
+                    _RFtest = RFtest
+
+                # single train/test split
+                X_train = _RFtrain
+                y_train = RMtrain.label.values
+
+                X_test = _RFtest
+                y_test = RMtest.label.values
+                clf = linear_model.LogisticRegression(penalty='l2',C=1).fit(X_train, y_train)
+
+                ## add prediction probabilities to metadata matrix
+                cats = clf.classes_
+                probs = clf.predict_proba(X_test)
+
+                ## add prediction probabilities to metadata matrix
+                ## must sort so that trained are first, and control is last
+                cats = list(clf.classes_)
+                _ordering = np.argsort(np.hstack((trained_objs,control_objs))) ## e.g., [chair table bench bed] ==> [3 2 0 1]
+                ordering = np.argsort(_ordering) ## get indices that sort from alphabetical to (trained_objs, control_objs)
+                probs = clf.predict_proba(X_test)[:,ordering] ## [table chair bed bench]
+                logprobs = np.log(clf.predict_proba(X_test)[:,ordering])                               
+
+                if logged==True:
+                    out = logprobs
+                else:
+                    out = probs
+
+                RM.at[RMtest.index,'t1_prob'] = out[:,0]
+                RM.at[RMtest.index,'t2_prob'] = out[:,1]
+                RM.at[RMtest.index,'c1_prob'] = out[:,2]   
+                RM.at[RMtest.index,'c2_prob'] = out[:,3]
+
+                ## also save out new columns in the same order
+                if logged==True:
+                    probs = np.log(clf.predict_proba(X_test))
+                else:
+                    probs = clf.predict_proba(X_test)
+                RM.at[RMtest.index,'bed_prob'] = probs[:,0]
+                RM.at[RMtest.index,'bench_prob'] = probs[:,1]
+                RM.at[RMtest.index,'chair_prob'] = probs[:,2]
+                RM.at[RMtest.index,'table_prob'] = probs[:,3]
+
+                ## add identity of trained objects and control objects to dataframe
+                RM.at[RMtest.index,'t1_name'] = trained_objs[0]
+                RM.at[RMtest.index,'t2_name'] = trained_objs[1]
+                RM.at[RMtest.index,'c1_name'] = control_objs[0]
+                RM.at[RMtest.index,'c2_name'] = control_objs[1]            
+
+                RM.at[RMtest.index,'subj'] = np.repeat(this_sub,len(RMtest.index))
+                RM.at[RMtest.index,'roi'] = np.repeat(this_roi,len(RMtest.index))                        
+
+                if len(ALLDM)==0:
+                    ALLDM = RM
+                else:
+                    ALLDM = pd.concat([ALLDM,RM],ignore_index=True)
+
+                _acc.append(clf.score(X_test, y_test))                
+            acc.append(np.mean(_acc))
+        Acc.append(acc)
+    Acc = np.array(Acc)
+    return ALLDM, Acc
+
+
 def make_prepostrecog_predictions(sub_list,roi_list,version='4way',test_phase='pre',logged=True):
     '''
     input:
