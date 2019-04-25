@@ -107,7 +107,7 @@ def bootstrapCI(x,nIter=1000):
 ###############################################################################################
 
 
-def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
+def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True,C=1):
     '''
     input:
         sub_list: a list containing subject IDs
@@ -184,7 +184,7 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
 
                 X_test = _DF
                 y_test = DM.label.values
-                clf = linear_model.LogisticRegression(penalty='l2',C=1).fit(X_train, y_train)
+                clf = linear_model.LogisticRegression(penalty='l2',C=C).fit(X_train, y_train)
 
                 ## add prediction probabilities to metadata matrix
                 cats = clf.classes_
@@ -447,7 +447,13 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True):
     return ALLDM, Acc
 
 
-def make_prepostrecog_predictions_withinphase(sub_list,roi_list,version='4way',test_phase='pre',logged=True):
+def make_prepostrecog_predictions_withinphase(sub_list,
+                                              roi_list,
+                                              version='4way',
+                                              test_phase='pre',
+                                              logged=True,
+                                              concat_initial_data=False,
+                                              C=1):
     '''
     input:
         sub_list: a list containing subject IDs
@@ -496,10 +502,11 @@ def make_prepostrecog_predictions_withinphase(sub_list,roi_list,version='4way',t
                 RMtrain = group 
                 RFtrain = RF[RMtrain.index,:]
                 
-#                 ## concat data with initial recognition run 
-#                 RMtrain = pd.concat([group,RM12],axis=0)
-#                 RFtrain = np.vstack((RFtrain,RF12))
-# #                 print(RMtrain.shape, RFtrain.shape)
+                if concat_initial_data:                
+                    ## concat data with initial recognition run 
+                    RMtrain = pd.concat([group,RM12],axis=0)
+                    RFtrain = np.vstack((RFtrain,RF12))
+                    ## print(RMtrain.shape, RFtrain.shape)
                 
                 RMtest = RM[RM['run_num']==np.setdiff1d([1,2],name)[0]] 
                 RFtest = RF[RMtest.index,:]
@@ -569,10 +576,11 @@ def make_prepostrecog_predictions_withinphase(sub_list,roi_list,version='4way',t
                 RM.at[RMtest.index,'subj'] = np.repeat(this_sub,len(RMtest.index))
                 RM.at[RMtest.index,'roi'] = np.repeat(this_roi,len(RMtest.index))                        
 
-                if len(ALLDM)==0:
-                    ALLDM = RM
-                else:
-                    ALLDM = pd.concat([ALLDM,RM],ignore_index=True)
+            ## this is part of the subject loop, do this once per subject
+            if len(ALLDM)==0:
+                ALLDM = RM
+            else:
+                ALLDM = pd.concat([ALLDM,RM],ignore_index=True)
 
                 _acc.append(clf.score(X_test, y_test))                
             acc.append(np.mean(_acc))
@@ -581,7 +589,12 @@ def make_prepostrecog_predictions_withinphase(sub_list,roi_list,version='4way',t
     return ALLDM, Acc
 
 
-def make_prepostrecog_predictions(sub_list,roi_list,version='4way',test_phase='pre',logged=True):
+def make_prepostrecog_predictions(sub_list,
+                                  roi_list,
+                                  version='4way',
+                                  test_phase='pre',
+                                  logged=True,
+                                  C=1):
     '''
     input:
         sub_list: a list containing subject IDs
