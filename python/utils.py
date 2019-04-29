@@ -69,6 +69,23 @@ def load_recog_data(this_sub,this_roi,this_phase):
     assert y.shape[0] == x.shape[0]
     return x,y
 
+def load_connect_meta(this_sub):
+    this_file = 'metadata_{}_corrs.csv'.format(this_sub)
+    x = pd.read_csv(os.path.join(path_to_connect,this_file))
+    return x
+
+def load_connect_feats(this_sub,this_roi_pair):
+    this_file = '{}_{}_featurematrix.npy'.format(this_sub,this_roi_pair)
+    y = np.load(os.path.join(path_to_connect, this_file))
+    y = y.transpose()
+    return y
+
+def load_connect_data(this_sub,this_roi_pair):
+    x = load_draw_meta(this_sub)
+    y = load_draw_feats(this_sub,this_roi_pair)
+    assert y.shape[0] == x.shape[0]
+    return x, y
+
 def normalize(X):
     '''
     z-score normalization to de-mean & standardize variances within-voxel
