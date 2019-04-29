@@ -12,6 +12,7 @@ import nibabel as nib
 from scipy.misc import imread, imresize
 from scipy.stats import norm, linregress
 import scipy.stats as stats
+import itertools
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from matplotlib import rcParams
@@ -77,12 +78,11 @@ def load_connect_meta(this_sub):
 def load_connect_feats(this_sub,this_roi_pair):
     this_file = '{}_{}_featurematrix.npy'.format(this_sub,this_roi_pair)
     y = np.load(os.path.join(path_to_connect, this_file))
-    y = y.transpose()
     return y
 
 def load_connect_data(this_sub,this_roi_pair):
-    x = load_draw_meta(this_sub)
-    y = load_draw_feats(this_sub,this_roi_pair)
+    x = load_connect_meta(this_sub)
+    y = load_connect_feats(this_sub,this_roi_pair)
     assert y.shape[0] == x.shape[0]
     return x, y
 
@@ -506,13 +506,13 @@ def make_prepostrecog_predictions_withinphase(sub_list,
             elif test_phase=='post':
                 RM, RF = load_recog_data(this_sub,this_roi,'56')            
             else:
-                print 'Invalid test split, test_phase should be either "pre" or "post." '
+                print('Invalid test split, test_phase should be either "pre" or "post." ')
 
             ## loop through train/test split
             _acc = []
             for name, group in RM.groupby('run_num'):
                 print('Now analyzing {} from {} ...'.format(this_roi, this_sub))    
-                print 'train run: {}, test run: {}'.format(name, np.setdiff1d([1,2],name)[0])
+                print('train run: {}, test run: {}'.format(name, np.setdiff1d([1,2],name)[0]))
                 clear_output(wait=True)
 
                 ## train/test split by run
@@ -649,7 +649,7 @@ def make_prepostrecog_predictions(sub_list,
             elif test_phase=='post':
                 RMtest, RFtest = load_recog_data(this_sub,this_roi,'56')            
             else:
-                print 'Invalid test split, test_phase should be either "pre" or "post." '
+                print('Invalid test split, test_phase should be either "pre" or "post." ')
             # identify control objects;
             # we wil train one classifier with
             
@@ -1077,7 +1077,7 @@ def add_target_prob_column(df):
     df['trained'] = np.bool
 
     for ind,d in df.iterrows():
-        print 'Analyzing {} of {}'.format(ind,df.shape[0])
+        print('Analyzing {} of {}'.format(ind,df.shape[0]))
         clear_output(wait=True)
         ordered_entries = ['t1_name','t2_name','c1_name','c2_name']
         ordered_labels = d[['t1_name','t2_name','c1_name','c2_name']].values.tolist()
@@ -1161,7 +1161,8 @@ def get_ci_bounds(x):
     return (lb,ub)
 
 def make_drawing_connectivity_predictions(sub_list, roi_list, version='phase', logged=True):
-        '''
+    
+    '''
     input:
         sub_list: a list containing subject IDs
         roi_list: a list containing roi names
@@ -1170,11 +1171,9 @@ def make_drawing_connectivity_predictions(sub_list, roi_list, version='phase', l
                 (i.e. train on run 1, test on run 2 and vice versa)
             allruns: trains on 3 runs, tests on a held out fourth (i.e. train on runs 1, 3 and 4, test on run 2).
         logged: boolean. If true, return log-probabilities. If false, return raw probabilities.
-
     assumes: that you have a directory containing trial-wise drawing run connectivity data, consisting 
                     of paired .npy voxel matrices and .csv metadata matrices
     '''
-
     ALLDM = []
     # loop through all subjects and roi pairs
     Acc = []
@@ -1183,6 +1182,7 @@ def make_drawing_connectivity_predictions(sub_list, roi_list, version='phase', l
         print('Now analyzing {}, {} ...'.format(this_roi, that_roi))
         acc = []
         for this_sub in sub_list:
+            print('subject: {}'.format(this_sub), end = ', ')
             ## load subject data in
             DM, DF = load_connect_data(this_sub, str(this_roi)+'_'+str(that_roi))
 
@@ -1192,13 +1192,14 @@ def make_drawing_connectivity_predictions(sub_list, roi_list, version='phase', l
             __acc = []
 
             compare = [2,1,4,3]
-            for i in range(1, 5):
+            for i in range(1,5):
                 if version == 'phase':
-                    trainrun_inds = DM.index[DM.run_num == compare[i]]
+                    trainrun_inds = DM.index[DM.run_num == compare[i-1]]
+                    DMtrain = DM[DM.run_num == compare[i-1]]
                 elif version == 'allruns':
                     trainrun_inds = DM.index[DM.run_num != i]
+                    DMtrain = DM[DM.run_num != i]
                 testrun_inds = DM.index[DM.run_num == i]
-                DMtrain = DM[DM.run_num != i]
                 DMtest = DM[DM.run_num == i]
                 trainrun_feats = DF[trainrun_inds, :]
                 testrun_feats = DF[testrun_inds, :]
