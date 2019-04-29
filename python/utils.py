@@ -1182,7 +1182,7 @@ def make_drawing_connectivity_predictions(sub_list, roi_list, version='phase', l
         print('Now analyzing {}, {} ...'.format(this_roi, that_roi))
         acc = []
         for this_sub in sub_list:
-            print('subject: {}'.format(this_sub), end = ', ')
+            print(this_sub, end = ', ')
             ## load subject data in
             DM, DF = load_connect_data(this_sub, str(this_roi)+'_'+str(that_roi))
 
@@ -1260,6 +1260,17 @@ def make_drawing_connectivity_predictions(sub_list, roi_list, version='phase', l
         Acc.append(acc)
     return ALLDM, Acc
 
+def get_connect_timecourse(iv,DM):
+    trained_objs = np.unique(DM.label.values)
+    
+    t1 = trained_objs[0]
+    t2 = trained_objs[1]
+    target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
+                        DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse
+    foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
+                      DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
+    return target, foil
+
 def plot_connect_timecourse(ALLDM, 
                             this_iv='trial_num',
                             roi_list=['V1Draw','V2Draw','LOCDraw'],
@@ -1306,7 +1317,7 @@ def plot_connect_timecourse(ALLDM,
         colors = [(199/255,139/255,234/255),(241/255,112/255,13/255),(125/255,162/255,197/255)]
         for sub in subs:
             inds = (ALLDM['roi1']==this_roi) & (ALLDM['roi2']==that_roi) & (ALLDM['subj']==sub)
-            t,f,c = get_log_prob_timecourse(this_iv,ALLDM[inds],version=version) if logged else get_prob_timecourse(this_iv,ALLDM[inds],version=version)
+            t,f = get_connect_timecourse(this_iv,ALLDM[inds])
             if baseline_correct:
                 t = t - t[0]
                 f = f - f[0]
@@ -1323,7 +1334,7 @@ def plot_connect_timecourse(ALLDM,
         if render_cond==1:
             ## make longform version of dataframe to use in tsplot (by condition)            
             Trial = np.tile(np.arange(len(t)),len(subs)*2)
-            Condition = np.repeat(['target','foil'],len(T))
+            Condition = np.repeat(['Target','Foil'],len(T))
             Sub = np.tile(np.array(flatten(Sub)),2)
             Prob = np.hstack((T,F))
             assert len(Trial)==len(Condition)
@@ -1353,7 +1364,7 @@ def plot_connect_timecourse(ALLDM,
                       time=lookup[this_iv],
                       unit='sub',
                       condition='condition',
-                      color=dict(zip(condses, colorses)),
+                      color=dict(zip(conds, colors)),
                       value='probability',
                       ci=95,
                       lw=5,
@@ -1361,16 +1372,18 @@ def plot_connect_timecourse(ALLDM,
                       err_style=['ci_bars'])
             plt.xticks([-0.25,0,1,1.25], ['',1,2,''], fontsize=20, **{'fontname':'Arial Narrow'})
         if plotType == 'bar':
+            if render_cond == 1:
+                print('ERROR: cannot create barplot with this render cond')
+                return False
+            data=x[x['condition'] == 'Target - Foil']
             sns.barplot(x=lookup[this_iv],
                         y='probability',
                         data=x[x['condition'] == 'Target - Foil'],
-                        color=(0,1,0,0),
+                        color=colors[0],
                         ci=95)
             for patch in ax.patches:
-                print(patch)
                 currwidth = patch.get_width()
                 diff = currwidth - 0.5
-                print(currwidth)
                 patch.set_width(0.5)
                 patch.set_x(patch.get_x() + diff * .5)
             plt.xticks([-0.5,0,1,1.5], ['',1,2,''], fontsize=20, **{'fontname':'Arial Narrow'})
@@ -1388,3 +1401,4 @@ def plot_connect_timecourse(ALLDM,
         plt.tight_layout()        
         plt.savefig(os.path.join(proj_dir,'plots/{}/{}/{}/connect_timecourse_{}_{}_by_{}_{}.pdf'.\
                     format(nb_name,lookup[this_iv],toop,this_roi,that_roi,lookup[this_iv],version)))
+        
