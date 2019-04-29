@@ -1357,6 +1357,7 @@ def plot_connect_timecourse(ALLDM,
             x = x.transpose()
             x.columns = ['probability',lookup[this_iv],'condition','sub']        
             toop = 'difference'
+            x.to_csv('{}/{}_{}_{}.csv'.format(results_dir, this_roi, that_roi, version))
         fig, ax = plt.subplots(figsize=(5, 5))
         ## plot it
         if plotType == 'line':
