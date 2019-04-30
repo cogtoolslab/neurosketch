@@ -461,6 +461,7 @@ def make_drawing_predictions(sub_list,roi_list,version='4way',logged=True,C=1):
         Acc.append(acc)
 
     Acc = np.array(Acc)
+    ALLDM['phase'] = 'draw'
     return ALLDM, Acc
 
 
@@ -591,7 +592,9 @@ def make_prepostrecog_predictions_withinphase(sub_list,
                 RM.at[RMtest.index,'c2_name'] = control_objs[1]            
 
                 RM.at[RMtest.index,'subj'] = np.repeat(this_sub,len(RMtest.index))
-                RM.at[RMtest.index,'roi'] = np.repeat(this_roi,len(RMtest.index))                        
+                RM.at[RMtest.index,'roi'] = np.repeat(this_roi,len(RMtest.index))   
+                
+                _acc.append(clf.score(X_test, y_test))
 
             ## this is part of the subject loop, do this once per subject
             if len(ALLDM)==0:
@@ -599,10 +602,11 @@ def make_prepostrecog_predictions_withinphase(sub_list,
             else:
                 ALLDM = pd.concat([ALLDM,RM],ignore_index=True)
 
-                _acc.append(clf.score(X_test, y_test))                
+                            
             acc.append(np.mean(_acc))
         Acc.append(acc)
     Acc = np.array(Acc)
+    ALLDM['phase'] = test_phase
     return ALLDM, Acc
 
 
@@ -890,6 +894,8 @@ def get_log_odds(ALLDM,
         C = []
         Sub = []
         for sub in subs:
+            print('Now analyzing {} from {}...'.format(this_roi,sub))
+            clear_output(wait=True)
             inds = (ALLDM['roi']==this_roi) & (ALLDM['subj']==sub) 
             t,f,c = get_log_prob_timecourse(this_iv,ALLDM[inds],version=version)
             if len(T)==0:
@@ -955,15 +961,16 @@ def get_log_prob_timecourse(iv,DM,version='4way'):
     t2 = DM['t2_name'].unique()[0]
     c1 = DM['c1_name'].unique()[0]
     c2 = DM['c2_name'].unique()[0]   
+
     
-    if DM.shape[0]==160: ## then this is a recog run, so log prob timecourse is computed differently
+    if DM['phase'].unique()[0] in ['pre','post']: ## then this is a recog run, so log prob timecourse is computed differently
         target = np.hstack((DM[DM.label==t1]['t1_prob'].values,DM[DM.label==t2]['t2_prob'].values))
         foil = np.hstack((DM[DM.label==t1]['t2_prob'].values,DM[DM.label==t2]['t1_prob'].values))
         c1 = np.hstack((DM[DM.label==t1]['c1_prob'].values,DM[DM.label==t2]['c1_prob'].values))
         c2 = np.hstack((DM[DM.label==t1]['c2_prob'].values,DM[DM.label==t2]['c2_prob'].values))
         control = np.vstack((c1,c2)).mean(0)    
     
-    if version[:4]=='4way': ## assuming that this is a drawing run             
+    elif version[:4]=='4way': ## assuming that this is a drawing run             
         
         target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
                        DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse
@@ -1182,7 +1189,6 @@ def make_drawing_connectivity_predictions(sub_list, roi_list, version='phase', l
         print('Now analyzing {}, {} ...'.format(this_roi, that_roi))
         acc = []
         for this_sub in sub_list:
-            print(this_sub, end = ', ')
             ## load subject data in
             DM, DF = load_connect_data(this_sub, str(this_roi)+'_'+str(that_roi))
 
