@@ -12,7 +12,7 @@ Two objects drawn in alternating sequence during drawing runs. Each drawing tria
 
 # Scanning parameters & sequence information
 
-TODO
+see: `/metadata/fmri_sequence_info`
 
 # fMRI data preprocessing
 
@@ -35,9 +35,6 @@ Note: before 4/23/18, canonical voxel matrices + metadata were in `neurosketch/d
 
 	Note: path on jukebox (accessible via Spock) is: `/jukebox/ntb/projects/sketchloop02/data`
 
-
-
-
 # Main analyses 
 
 ## INPUT to analysis:
@@ -52,22 +49,9 @@ There is a master DATA dir containing all processed fMRI data in standard format
 	* `DATA/copes/draw/taskGLM` drawing cope maps from drawing_task GLM
 
 # List of main analysis notebooks:
-1. Pre-Post Representational Similarity Analyses on Recognition Data
-	- Substantial variation in extent to which these have changed from before to after drawing
-	- How correlated are individual differences in prepost differentiation across different ROIs? (matrix plot)
+1. Measure Object Evidence on Recognition Run Data in Visual Cortex
 
-2. Measure Evidence for Objects During Drawing
-	- Using indpt neural patterns from localizer recognition runs to generalize to drawing runs
-	- How correlated are logistic classifier predictions across different ROIs? (matrix plot)	
+2. Measure Object Evidence on Drawing Run Data in Visual Cortex
 
-3. Relate Drawing and Differentiation
-	- Where do we see relationship between target selection during drawing and representational differentiation?
-	- When does relationship emerge during session?
-	- Interaction with object assignment? (mixed effects model)	
-
-4. Measure Informational Connectivity within Drawing Regions
-	- Which regions represent information about target over time?
-	- How do patterns between regions capture information about target over time?
-	- What does this imply about organization of visual production system?
-
+3. Measure Patterns of Connectivity Between Early Visual and Parietal Regions
 
