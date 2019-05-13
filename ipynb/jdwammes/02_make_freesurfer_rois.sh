@@ -21,7 +21,7 @@ SUBJECT=freesurfer
 source $CURR_DIR/globals.sh # load subject-wide settings
 
 
-ROI_DIR=$SUBJECTS_DIR/surfROI
+ROI_DIR=$FL_DIR/surfROI
 
 
 if [ ! -d "$ROI_DIR" ]; then
