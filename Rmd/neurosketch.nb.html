@@ -1767,13 +1767,14 @@ $(document).ready(function () {
 <!-- rnb-text-end -->
 <!-- rnb-text-begin -->
 </div>
-<div id="import-data" class="section level2">
-<h2>import data</h2>
+<div id="fit-a-single-roi" class="section level2">
+<h2>fit a single ROI</h2>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZCA8LSByZWFkX2NzdignLi4vY3N2L29iamVjdF9jbGFzc2lmaWVyX3ByZXBvc3RfYWNjdXJhY3kuY3N2JykgICU+JVxuICAgZmlsdGVyKHJvaV9mb3JtYXR0ZWQgPT0gJ1YxJykgXG5gYGAifQ== -->
-<pre class="r"><code>d &lt;- read_csv(&#39;../csv/object_classifier_prepost_accuracy.csv&#39;)  %&gt;%
-   filter(roi_formatted == &#39;V1&#39;) </code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucm9pcyA9IGMoJ1YxJywnVjInLCdMT0MnLCdGVVMnLCdQSEMnLCdJVCcsJ0VOVCcsJ1BSQycsJ0hDJylcbmQgPC0gcmVhZF9jc3YoJy4uL2Nzdi9vYmplY3RfY2xhc3NpZmllcl9wcmVwb3N0X2FjY3VyYWN5LmNzdicpICU+JVxuICAgIGZpbHRlcihyb2lfZm9ybWF0dGVkPT0nVjEnKVxuYGBgIn0= -->
+<pre class="r"><code>rois = c(&#39;V1&#39;,&#39;V2&#39;,&#39;LOC&#39;,&#39;FUS&#39;,&#39;PHC&#39;,&#39;IT&#39;,&#39;ENT&#39;,&#39;PRC&#39;,&#39;HC&#39;)
+d &lt;- read_csv(&#39;../csv/object_classifier_prepost_accuracy.csv&#39;) %&gt;%
+    filter(roi_formatted==&#39;V1&#39;)</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-output-begin eyJkYXRhIjoiUGFyc2VkIHdpdGggY29sdW1uIHNwZWNpZmljYXRpb246XG5jb2xzKFxuICByb2lfZm9ybWF0dGVkID0gY29sX2NoYXJhY3RlcigpLFxuICBzdWJqID0gY29sX2ludGVnZXIoKSxcbiAgcGhhc2UgPSBjb2xfY2hhcmFjdGVyKCksXG4gIHRyYWluZWQgPSBjb2xfY2hhcmFjdGVyKCksXG4gIGNvcnJlY3QgPSBjb2xfZG91YmxlKClcbilcbiJ9 -->
 <pre><code>Parsed with column specification:
@@ -1785,8 +1786,9 @@ cols(
   correct = col_double()
 )</code></pre>
 <!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubSA8LSBsbWVyKGNvcnJlY3QgfiBwaGFzZSAqIHRyYWluZWQgKyAoMSB8IHN1YmopLCBkYXRhID0gZClcbnN1bW1hcnkobSlcbmBgYCJ9 -->
-<pre class="r"><code>m &lt;- lmer(correct ~ phase * trained + (1 | subj), data = d)
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuICAgXG5tIDwtIGxtZXIoY29ycmVjdCB+IHBoYXNlICogdHJhaW5lZCArICgxIHwgc3ViaiksIGRhdGEgPSBkKVxuc3VtbWFyeShtKVxuYGBgIn0= -->
+<pre class="r"><code>   
+m &lt;- lmer(correct ~ phase * trained + (1 | subj), data = d)
 summary(m)</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-output-begin eyJkYXRhIjoiTGluZWFyIG1peGVkIG1vZGVsIGZpdCBieSBSRU1MLiB0LXRlc3RzIHVzZSBTYXR0ZXJ0aHdhaXRlJ3MgbWV0aG9kIFsnbG1lck1vZExtZXJUZXN0J11cbkZvcm11bGE6IGNvcnJlY3QgfiBwaGFzZSAqIHRyYWluZWQgKyAoMSB8IHN1YmopXG4gICBEYXRhOiBkXG5cblJFTUwgY3JpdGVyaW9uIGF0IGNvbnZlcmdlbmNlOiAtMjM5LjJcblxuU2NhbGVkIHJlc2lkdWFsczogXG4gICAgIE1pbiAgICAgICAxUSAgIE1lZGlhbiAgICAgICAzUSAgICAgIE1heCBcbi0xLjkwMTMwIC0wLjY5MzMzICAwLjAxMjU2ICAwLjU5NDMyICAyLjI2ODE2IFxuXG5SYW5kb20gZWZmZWN0czpcbiBHcm91cHMgICBOYW1lICAgICAgICBWYXJpYW5jZSBTdGQuRGV2LlxuIHN1YmogICAgIChJbnRlcmNlcHQpIDAuMDAxMDk0IDAuMDMzMDggXG4gUmVzaWR1YWwgICAgICAgICAgICAgMC4wMDYyMzAgMC4wNzg5MyBcbk51bWJlciBvZiBvYnM6IDEyNCwgZ3JvdXBzOiAgc3ViaiwgMzFcblxuRml4ZWQgZWZmZWN0czpcbiAgICAgICAgICAgICAgICAgICAgICAgRXN0aW1hdGUgU3RkLiBFcnJvciAgICAgICAgIGRmIHQgdmFsdWUgUHIoPnx0fCkgICAgXG4oSW50ZXJjZXB0KSAgICAgICAgICAgIDAuMzQ5MTk0ICAgMC4wMTUzNzEgMTEyLjQ2NzMxNSAgMjIuNzE3ICAgPDJlLTE2ICoqKlxucGhhc2VwcmUgICAgICAgICAgICAgIC0wLjAwNDAzMiAgIDAuMDIwMDQ5ICA5MC4wMDAwMDAgIC0wLjIwMSAgICAwLjg0MSAgICBcbnRyYWluZWRUcnVlICAgICAgICAgICAgMC4wMDc2NjEgICAwLjAyMDA0OSAgOTAuMDAwMDAwICAgMC4zODIgICAgMC43MDMgICAgXG5waGFzZXByZTp0cmFpbmVkVHJ1ZSAgIDAuMDA2MDQ4ICAgMC4wMjgzNTMgIDkwLjAwMDAwMCAgIDAuMjEzICAgIDAuODMyICAgIFxuLS0tXG5TaWduaWYuIGNvZGVzOiAgMCDigJgqKirigJkgMC4wMDEg4oCYKirigJkgMC4wMSDigJgq4oCZIDAuMDUg4oCYLuKAmSAwLjEg4oCYIOKAmSAxXG5cbkNvcnJlbGF0aW9uIG9mIEZpeGVkIEVmZmVjdHM6XG4gICAgICAgICAgICAoSW50cikgcGhhc3ByIHRybmRUclxucGhhc2VwcmUgICAgLTAuNjUyICAgICAgICAgICAgICBcbnRyYWluZWRUcnVlIC0wLjY1MiAgMC41MDAgICAgICAgXG5waHNwcjp0cm5kVCAgMC40NjEgLTAuNzA3IC0wLjcwN1xuIn0= -->
@@ -1823,10 +1825,29 @@ phspr:trndT  0.461 -0.707 -0.707</code></pre>
 <!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
+</div>
+<div id="loop-through-all-rois" class="section level2">
+<h2>loop through all ROIs</h2>
 <!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucm9pcyA9IGMoJ1YxJywnVjInLCdMT0MnLCdGVVMnLCdQSEMnLCdJVCcsJ0VOVCcsJ1BSQycsJ0hDJylcblxuZCA8LSByZWFkX2NzdignLi4vY3N2L29iamVjdF9jbGFzc2lmaWVyX3ByZXBvc3RfYWNjdXJhY3kuY3N2JylcbiAgIFxubWFwX2Rmcihyb2lzLCB+IHtcbiAgbG1lci5vdXQgPC0gbG1lcihjb3JyZWN0IH4gcGhhc2UgKiB0cmFpbmVkICsgKDEgfCBzdWJqKSwgXG4gICAgICAgICAgICAgICAgICAgZGF0YSA9IGQgJT4lIGZpbHRlcihyb2lfZm9ybWF0dGVkID09IC54KSkgJT4lXG4gICAgdGlkeSgnZml4ZWQnKVxuICBjb2xuYW1lcyhsbWVyLm91dCkgPC0gYygndGVybScsICdlc3RpbWF0ZScsICdzdGQuZXJyb3InLCAnZGYnLCAnc3RhdGlzdGljJywgJ3AudmFsdWUnKVxuICByZXR1cm4obG1lci5vdXQgJT4lXG4gICAgIG11dGF0ZShyb2kgPSAueCkpXG59KVxuYGBgIn0= -->
+<pre class="r"><code>rois = c(&#39;V1&#39;,&#39;V2&#39;,&#39;LOC&#39;,&#39;FUS&#39;,&#39;PHC&#39;,&#39;IT&#39;,&#39;ENT&#39;,&#39;PRC&#39;,&#39;HC&#39;)
+
+d &lt;- read_csv(&#39;../csv/object_classifier_prepost_accuracy.csv&#39;)
+   
+map_dfr(rois, ~ {
+  lmer.out &lt;- lmer(correct ~ phase * trained + (1 | subj), 
+                   data = d %&gt;% filter(roi_formatted == .x)) %&gt;%
+    tidy(&#39;fixed&#39;)
+  colnames(lmer.out) &lt;- c(&#39;term&#39;, &#39;estimate&#39;, &#39;std.error&#39;, &#39;df&#39;, &#39;statistic&#39;, &#39;p.value&#39;)
+  return(lmer.out %&gt;%
+     mutate(roi = .x))
+})</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
 </div>
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiMV9wcmVwb3N0X3JlY29nbml0aW9uX2NsYXNzaWZpZXIiCm91dHB1dDogaHRtbF9ub3RlYm9vawotLS0KCiMjIGxvYWQgbmVjZXNzYXJ5IHBhY2thZ2VzCmBgYHtyIHNldHVwLCBpbmNsdWRlPUZBTFNFfQprbml0cjo6b3B0c19jaHVuayRzZXQoZWNobyA9IFRSVUUpCmxpYnJhcnkodGlkeXZlcnNlKQpsaWJyYXJ5KGdndGhlbWVzKQpsaWJyYXJ5KGxtZTQpCmxpYnJhcnkobG1lclRlc3QpCmxpYnJhcnkodGlkeWJvb3QpCmBgYAoKIyMgaW1wb3J0IGRhdGEKYGBge3J9CmQgPC0gcmVhZF9jc3YoJy4uL2Nzdi9vYmplY3RfY2xhc3NpZmllcl9wcmVwb3N0X2FjY3VyYWN5LmNzdicpICAlPiUKICAgZmlsdGVyKHJvaV9mb3JtYXR0ZWQgPT0gJ1YxJykgCgptIDwtIGxtZXIoY29ycmVjdCB+IHBoYXNlICogdHJhaW5lZCArICgxIHwgc3ViaiksIGRhdGEgPSBkKQpzdW1tYXJ5KG0pCmBgYAoK</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiMV9wcmVwb3N0X3JlY29nbml0aW9uX2NsYXNzaWZpZXIiCm91dHB1dDogaHRtbF9ub3RlYm9vawotLS0KCiMjIGxvYWQgbmVjZXNzYXJ5IHBhY2thZ2VzCmBgYHtyIHNldHVwLCBpbmNsdWRlPUZBTFNFfQprbml0cjo6b3B0c19jaHVuayRzZXQoZWNobyA9IFRSVUUpCmxpYnJhcnkodGlkeXZlcnNlKQpsaWJyYXJ5KGdndGhlbWVzKQpsaWJyYXJ5KGxtZTQpCmxpYnJhcnkobG1lclRlc3QpCmxpYnJhcnkodGlkeWJvb3QpCmBgYAoKCiMjIGZpdCBhIHNpbmdsZSBST0kKYGBge3J9CnJvaXMgPSBjKCdWMScsJ1YyJywnTE9DJywnRlVTJywnUEhDJywnSVQnLCdFTlQnLCdQUkMnLCdIQycpCgpkIDwtIHJlYWRfY3N2KCcuLi9jc3Yvb2JqZWN0X2NsYXNzaWZpZXJfcHJlcG9zdF9hY2N1cmFjeS5jc3YnKSAlPiUKICAgIGZpbHRlcihyb2lfZm9ybWF0dGVkPT0nVjEnKQogICAKbSA8LSBsbWVyKGNvcnJlY3QgfiBwaGFzZSAqIHRyYWluZWQgKyAoMSB8IHN1YmopLCBkYXRhID0gZCkKc3VtbWFyeShtKQpgYGAKCiMjIGxvb3AgdGhyb3VnaCBhbGwgUk9JcwpgYGB7cn0Kcm9pcyA9IGMoJ1YxJywnVjInLCdMT0MnLCdGVVMnLCdQSEMnLCdJVCcsJ0VOVCcsJ1BSQycsJ0hDJykKCmQgPC0gcmVhZF9jc3YoJy4uL2Nzdi9vYmplY3RfY2xhc3NpZmllcl9wcmVwb3N0X2FjY3VyYWN5LmNzdicpCiAgIAptYXBfZGZyKHJvaXMsIH4gewogIGxtZXIub3V0IDwtIGxtZXIoY29ycmVjdCB+IHBoYXNlICogdHJhaW5lZCArICgxIHwgc3ViaiksIAogICAgICAgICAgICAgICAgICAgZGF0YSA9IGQgJT4lIGZpbHRlcihyb2lfZm9ybWF0dGVkID09IC54KSkgJT4lCiAgICB0aWR5KCdmaXhlZCcpCiAgY29sbmFtZXMobG1lci5vdXQpIDwtIGMoJ3Rlcm0nLCAnZXN0aW1hdGUnLCAnc3RkLmVycm9yJywgJ2RmJywgJ3N0YXRpc3RpYycsICdwLnZhbHVlJykKICByZXR1cm4obG1lci5vdXQgJT4lCiAgICAgbXV0YXRlKHJvaSA9IC54KSkKfSkKYGBgCg==</div>
 
 
 
