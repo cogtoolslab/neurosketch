@@ -1771,16 +1771,15 @@ $(document).ready(function () {
 <h2>import data</h2>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZCA8LSByZWFkX2NzdignLi4vY3N2L3ByZXBvc3RfcmVjb2dfYWNjdXJhY3kuY3N2JykgICU+JVxuICAgZmlsdGVyKHJvaV9mb3JtYXR0ZWQgPT0gJ1YxJykgXG5gYGAifQ== -->
-<pre class="r"><code>d &lt;- read_csv(&#39;../csv/prepost_recog_accuracy.csv&#39;)  %&gt;%
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZCA8LSByZWFkX2NzdignLi4vY3N2L29iamVjdF9jbGFzc2lmaWVyX3ByZXBvc3RfYWNjdXJhY3kuY3N2JykgICU+JVxuICAgZmlsdGVyKHJvaV9mb3JtYXR0ZWQgPT0gJ1YxJykgXG5gYGAifQ== -->
+<pre class="r"><code>d &lt;- read_csv(&#39;../csv/object_classifier_prepost_accuracy.csv&#39;)  %&gt;%
    filter(roi_formatted == &#39;V1&#39;) </code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiTWlzc2luZyBjb2x1bW4gbmFtZXMgZmlsbGVkIGluOiAnWDEnIFsxXVBhcnNlZCB3aXRoIGNvbHVtbiBzcGVjaWZpY2F0aW9uOlxuY29scyhcbiAgWDEgPSBjb2xfaW50ZWdlcigpLFxuICByb2lfZm9ybWF0dGVkID0gY29sX2NoYXJhY3RlcigpLFxuICBzdWJqID0gY29sX2NoYXJhY3RlcigpLFxuICBwaGFzZSA9IGNvbF9jaGFyYWN0ZXIoKSxcbiAgdHJhaW5lZCA9IGNvbF9jaGFyYWN0ZXIoKSxcbiAgY29ycmVjdCA9IGNvbF9kb3VibGUoKVxuKVxuIn0= -->
-<pre><code>Missing column names filled in: &#39;X1&#39; [1]Parsed with column specification:
+<!-- rnb-output-begin eyJkYXRhIjoiUGFyc2VkIHdpdGggY29sdW1uIHNwZWNpZmljYXRpb246XG5jb2xzKFxuICByb2lfZm9ybWF0dGVkID0gY29sX2NoYXJhY3RlcigpLFxuICBzdWJqID0gY29sX2ludGVnZXIoKSxcbiAgcGhhc2UgPSBjb2xfY2hhcmFjdGVyKCksXG4gIHRyYWluZWQgPSBjb2xfY2hhcmFjdGVyKCksXG4gIGNvcnJlY3QgPSBjb2xfZG91YmxlKClcbilcbiJ9 -->
+<pre><code>Parsed with column specification:
 cols(
-  X1 = col_integer(),
   roi_formatted = col_character(),
-  subj = col_character(),
+  subj = col_integer(),
   phase = col_character(),
   trained = col_character(),
   correct = col_double()
@@ -1790,44 +1789,44 @@ cols(
 <pre class="r"><code>m &lt;- lmer(correct ~ phase * trained + (1 | subj), data = d)
 summary(m)</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiTGluZWFyIG1peGVkIG1vZGVsIGZpdCBieSBSRU1MLiB0LXRlc3RzIHVzZSBTYXR0ZXJ0aHdhaXRlJ3MgbWV0aG9kIFsnbG1lck1vZExtZXJUZXN0J11cbkZvcm11bGE6IGNvcnJlY3QgfiBwaGFzZSAqIHRyYWluZWQgKyAoMSB8IHN1YmopXG4gICBEYXRhOiBkXG5cblJFTUwgY3JpdGVyaW9uIGF0IGNvbnZlcmdlbmNlOiAtMjM4LjFcblxuU2NhbGVkIHJlc2lkdWFsczogXG4gICAgIE1pbiAgICAgICAxUSAgIE1lZGlhbiAgICAgICAzUSAgICAgIE1heCBcbi0yLjQ3NDQ4IC0wLjYxODE3ICAwLjAxODE0ICAwLjY0NDczICAyLjEwMTE4IFxuXG5SYW5kb20gZWZmZWN0czpcbiBHcm91cHMgICBOYW1lICAgICAgICBWYXJpYW5jZSBTdGQuRGV2LlxuIHN1YmogICAgIChJbnRlcmNlcHQpIDAuMDAwNzcwIDAuMDI3NzUgXG4gUmVzaWR1YWwgICAgICAgICAgICAgMC4wMDY1MTcgMC4wODA3MyBcbk51bWJlciBvZiBvYnM6IDEyNCwgZ3JvdXBzOiAgc3ViaiwgMzFcblxuRml4ZWQgZWZmZWN0czpcbiAgICAgICAgICAgICAgICAgICAgICAgRXN0aW1hdGUgU3RkLiBFcnJvciAgICAgICAgIGRmIHQgdmFsdWUgUHIoPnx0fCkgICAgXG4oSW50ZXJjZXB0KSAgICAgICAgICAgIDAuMzQ3OTg0ICAgMC4wMTUzMzEgMTE2LjExMDMyOCAgMjIuNjk3ICAgPDJlLTE2ICoqKlxucGhhc2VwcmUgICAgICAgICAgICAgIC0wLjAwNDAzMiAgIDAuMDIwNTA0ICA5MC4wMDAwMDAgIC0wLjE5NyAgIDAuODQ0NSAgICBcbnRyYWluZWRUcnVlICAgICAgICAgICAgMC4wNDcxNzcgICAwLjAyMDUwNCAgOTAuMDAwMDAwICAgMi4zMDEgICAwLjAyMzcgKiAgXG5waGFzZXByZTp0cmFpbmVkVHJ1ZSAgLTAuMDI2MjEwICAgMC4wMjg5OTggIDkwLjAwMDAwMCAgLTAuOTA0ICAgMC4zNjg1ICAgIFxuLS0tXG5TaWduaWYuIGNvZGVzOiAgMCDigJgqKirigJkgMC4wMDEg4oCYKirigJkgMC4wMSDigJgq4oCZIDAuMDUg4oCYLuKAmSAwLjEg4oCYIOKAmSAxXG5cbkNvcnJlbGF0aW9uIG9mIEZpeGVkIEVmZmVjdHM6XG4gICAgICAgICAgICAoSW50cikgcGhhc3ByIHRybmRUclxucGhhc2VwcmUgICAgLTAuNjY5ICAgICAgICAgICAgICBcbnRyYWluZWRUcnVlIC0wLjY2OSAgMC41MDAgICAgICAgXG5waHNwcjp0cm5kVCAgMC40NzMgLTAuNzA3IC0wLjcwN1xuIn0= -->
+<!-- rnb-output-begin eyJkYXRhIjoiTGluZWFyIG1peGVkIG1vZGVsIGZpdCBieSBSRU1MLiB0LXRlc3RzIHVzZSBTYXR0ZXJ0aHdhaXRlJ3MgbWV0aG9kIFsnbG1lck1vZExtZXJUZXN0J11cbkZvcm11bGE6IGNvcnJlY3QgfiBwaGFzZSAqIHRyYWluZWQgKyAoMSB8IHN1YmopXG4gICBEYXRhOiBkXG5cblJFTUwgY3JpdGVyaW9uIGF0IGNvbnZlcmdlbmNlOiAtMjM5LjJcblxuU2NhbGVkIHJlc2lkdWFsczogXG4gICAgIE1pbiAgICAgICAxUSAgIE1lZGlhbiAgICAgICAzUSAgICAgIE1heCBcbi0xLjkwMTMwIC0wLjY5MzMzICAwLjAxMjU2ICAwLjU5NDMyICAyLjI2ODE2IFxuXG5SYW5kb20gZWZmZWN0czpcbiBHcm91cHMgICBOYW1lICAgICAgICBWYXJpYW5jZSBTdGQuRGV2LlxuIHN1YmogICAgIChJbnRlcmNlcHQpIDAuMDAxMDk0IDAuMDMzMDggXG4gUmVzaWR1YWwgICAgICAgICAgICAgMC4wMDYyMzAgMC4wNzg5MyBcbk51bWJlciBvZiBvYnM6IDEyNCwgZ3JvdXBzOiAgc3ViaiwgMzFcblxuRml4ZWQgZWZmZWN0czpcbiAgICAgICAgICAgICAgICAgICAgICAgRXN0aW1hdGUgU3RkLiBFcnJvciAgICAgICAgIGRmIHQgdmFsdWUgUHIoPnx0fCkgICAgXG4oSW50ZXJjZXB0KSAgICAgICAgICAgIDAuMzQ5MTk0ICAgMC4wMTUzNzEgMTEyLjQ2NzMxNSAgMjIuNzE3ICAgPDJlLTE2ICoqKlxucGhhc2VwcmUgICAgICAgICAgICAgIC0wLjAwNDAzMiAgIDAuMDIwMDQ5ICA5MC4wMDAwMDAgIC0wLjIwMSAgICAwLjg0MSAgICBcbnRyYWluZWRUcnVlICAgICAgICAgICAgMC4wMDc2NjEgICAwLjAyMDA0OSAgOTAuMDAwMDAwICAgMC4zODIgICAgMC43MDMgICAgXG5waGFzZXByZTp0cmFpbmVkVHJ1ZSAgIDAuMDA2MDQ4ICAgMC4wMjgzNTMgIDkwLjAwMDAwMCAgIDAuMjEzICAgIDAuODMyICAgIFxuLS0tXG5TaWduaWYuIGNvZGVzOiAgMCDigJgqKirigJkgMC4wMDEg4oCYKirigJkgMC4wMSDigJgq4oCZIDAuMDUg4oCYLuKAmSAwLjEg4oCYIOKAmSAxXG5cbkNvcnJlbGF0aW9uIG9mIEZpeGVkIEVmZmVjdHM6XG4gICAgICAgICAgICAoSW50cikgcGhhc3ByIHRybmRUclxucGhhc2VwcmUgICAgLTAuNjUyICAgICAgICAgICAgICBcbnRyYWluZWRUcnVlIC0wLjY1MiAgMC41MDAgICAgICAgXG5waHNwcjp0cm5kVCAgMC40NjEgLTAuNzA3IC0wLjcwN1xuIn0= -->
 <pre><code>Linear mixed model fit by REML. t-tests use Satterthwaite&#39;s method [&#39;lmerModLmerTest&#39;]
 Formula: correct ~ phase * trained + (1 | subj)
    Data: d
 
-REML criterion at convergence: -238.1
+REML criterion at convergence: -239.2
 
 Scaled residuals: 
      Min       1Q   Median       3Q      Max 
--2.47448 -0.61817  0.01814  0.64473  2.10118 
+-1.90130 -0.69333  0.01256  0.59432  2.26816 
 
 Random effects:
  Groups   Name        Variance Std.Dev.
- subj     (Intercept) 0.000770 0.02775 
- Residual             0.006517 0.08073 
+ subj     (Intercept) 0.001094 0.03308 
+ Residual             0.006230 0.07893 
 Number of obs: 124, groups:  subj, 31
 
 Fixed effects:
                        Estimate Std. Error         df t value Pr(&gt;|t|)    
-(Intercept)            0.347984   0.015331 116.110328  22.697   &lt;2e-16 ***
-phasepre              -0.004032   0.020504  90.000000  -0.197   0.8445    
-trainedTrue            0.047177   0.020504  90.000000   2.301   0.0237 *  
-phasepre:trainedTrue  -0.026210   0.028998  90.000000  -0.904   0.3685    
+(Intercept)            0.349194   0.015371 112.467315  22.717   &lt;2e-16 ***
+phasepre              -0.004032   0.020049  90.000000  -0.201    0.841    
+trainedTrue            0.007661   0.020049  90.000000   0.382    0.703    
+phasepre:trainedTrue   0.006048   0.028353  90.000000   0.213    0.832    
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Correlation of Fixed Effects:
             (Intr) phaspr trndTr
-phasepre    -0.669              
-trainedTrue -0.669  0.500       
-phspr:trndT  0.473 -0.707 -0.707</code></pre>
+phasepre    -0.652              
+trainedTrue -0.652  0.500       
+phspr:trndT  0.461 -0.707 -0.707</code></pre>
 <!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 </div>
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiMV9wcmVwb3N0X3JlY29nbml0aW9uX2NsYXNzaWZpZXIiCm91dHB1dDogaHRtbF9ub3RlYm9vawotLS0KCiMjIGxvYWQgbmVjZXNzYXJ5IHBhY2thZ2VzCmBgYHtyIHNldHVwLCBpbmNsdWRlPUZBTFNFfQprbml0cjo6b3B0c19jaHVuayRzZXQoZWNobyA9IFRSVUUpCmxpYnJhcnkodGlkeXZlcnNlKQpsaWJyYXJ5KGdndGhlbWVzKQpsaWJyYXJ5KGxtZTQpCmxpYnJhcnkobG1lclRlc3QpCmxpYnJhcnkodGlkeWJvb3QpCmBgYAoKIyMgaW1wb3J0IGRhdGEKYGBge3J9CmQgPC0gcmVhZF9jc3YoJy4uL2Nzdi9wcmVwb3N0X3JlY29nX2FjY3VyYWN5LmNzdicpICAlPiUKICAgZmlsdGVyKHJvaV9mb3JtYXR0ZWQgPT0gJ1YxJykgCgptIDwtIGxtZXIoY29ycmVjdCB+IHBoYXNlICogdHJhaW5lZCArICgxIHwgc3ViaiksIGRhdGEgPSBkKQpzdW1tYXJ5KG0pCmBgYAoKCgo=</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiMV9wcmVwb3N0X3JlY29nbml0aW9uX2NsYXNzaWZpZXIiCm91dHB1dDogaHRtbF9ub3RlYm9vawotLS0KCiMjIGxvYWQgbmVjZXNzYXJ5IHBhY2thZ2VzCmBgYHtyIHNldHVwLCBpbmNsdWRlPUZBTFNFfQprbml0cjo6b3B0c19jaHVuayRzZXQoZWNobyA9IFRSVUUpCmxpYnJhcnkodGlkeXZlcnNlKQpsaWJyYXJ5KGdndGhlbWVzKQpsaWJyYXJ5KGxtZTQpCmxpYnJhcnkobG1lclRlc3QpCmxpYnJhcnkodGlkeWJvb3QpCmBgYAoKIyMgaW1wb3J0IGRhdGEKYGBge3J9CmQgPC0gcmVhZF9jc3YoJy4uL2Nzdi9vYmplY3RfY2xhc3NpZmllcl9wcmVwb3N0X2FjY3VyYWN5LmNzdicpICAlPiUKICAgZmlsdGVyKHJvaV9mb3JtYXR0ZWQgPT0gJ1YxJykgCgptIDwtIGxtZXIoY29ycmVjdCB+IHBoYXNlICogdHJhaW5lZCArICgxIHwgc3ViaiksIGRhdGEgPSBkKQpzdW1tYXJ5KG0pCmBgYAoK</div>
 
 
 

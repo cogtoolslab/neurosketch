@@ -15,12 +15,10 @@ library(tidyboot)
 
 ## import data
 ```{r}
-d <- read_csv('../csv/prepost_recog_accuracy.csv')  %>%
+d <- read_csv('../csv/object_classifier_prepost_accuracy.csv')  %>%
    filter(roi_formatted == 'V1') 
 
 m <- lmer(correct ~ phase * trained + (1 | subj), data = d)
 summary(m)
 ```
-
-
 
