@@ -102,7 +102,7 @@ def cleanup_df(df):
     df = df.drop(surplus,axis=1)
     return df    
 
-def bootstrapCI(x,nIter=1000):
+def bootstrapCI(x,nIter=1000,crit_val = 0):
     '''
     input: x is an array
     '''
@@ -112,8 +112,8 @@ def bootstrapCI(x,nIter=1000):
         boot = x[inds]
         u.append(np.mean(boot))
 
-    p1 = len([i for i in u if i<0])/len(u) * 2 ## first version of p-value reflects number of samples that have value below 0
-    p2 = len([i for i in u if i>0])/len(u) * 2 ## second version of p-value reflects number of samples that have value above 0
+    p1 = len([i for i in u if i<crit_val])/len(u) * 2 ## first version of p-value reflects number of samples that have value below crit_val
+    p2 = len([i for i in u if i>crit_val])/len(u) * 2 ## second version of p-value reflects number of samples that have value above crit_val
     U = np.mean(u)
     lb = np.percentile(u,2.5)
     ub = np.percentile(u,97.5)
