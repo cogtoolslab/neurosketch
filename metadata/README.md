@@ -1,0 +1,1 @@
+This directory contains scripts to extract and tidy up metadata from the mongodb and produce regressor txt files that can be used to define the object GLM in FSL.
