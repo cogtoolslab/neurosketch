@@ -1,0 +1,1 @@
+This directory contains raw images from each functional run for each participant in the experiment. 

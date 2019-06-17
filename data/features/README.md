@@ -1,0 +1,1 @@
+This directory contains vectorized voxel features for each functional run for each participant in the experiment. 
