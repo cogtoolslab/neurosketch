@@ -9,6 +9,7 @@ data/*
 .DS_Store
 *.Rproj
 .RData
+archive/
 
 *.png
 *.bbl

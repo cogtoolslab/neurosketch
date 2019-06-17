@@ -13,15 +13,13 @@ import glob
 from pylab import *
 from numpy import *
 
-import analysis_helpers as mdr_helpers
-
 conn = pm.MongoClient(port=20809)
 DBNAME = conn['during_morph_drawing_recognition']
 COLNAME = DBNAME['fmri3.files']
 coll=COLNAME
-DATADIR = 'neurosketch_data_3'
+DATADIR = 'neurosketch_metadata'
 
-mdtd = cPickle.load(open('morph_drawing_training_design.pkl'))
+mdtd = cPickle.load(open('neurosketch_design.pkl'))
 
 # patient ID and worker ID mappings
 ## exceptions: '1115161_neurosketch', '1116161_neurosketch', '1117161_neurosketch', '1207161_neurosketch'
@@ -64,7 +62,7 @@ def get_object_index(morphline,morphnum):
     car_axes = ['limoToSUV','limoToSedan','limoToSmart','smartToSedan','suvToSedan','suvToSmart']  
     furniture_items = ['bed','bench','chair','table']
     car_items = ['limo','sedan','smartcar','SUV']               
-    endpoints = mdr_helpers.getEndpoints(morphline)
+    endpoints = getEndpoints(morphline)
     morphnum = float(morphnum)
     whichEndpoint = int(np.round(morphnum/100))
     thing = endpoints[whichEndpoint]
@@ -113,6 +111,47 @@ def get_worker_list():
 	wIDs = COLNAME.find({'wID':{'$ne': ''}}).distinct('wID')
 	good_sessions = patient_ids
 	return good_sessions	
+
+
+def getEndpoints(morphline):    
+    if morphline=='sedanMinivan':
+        return ['sedan','minivan']
+    elif morphline=='minivanSportscar':
+        return ['minivan','sportscar']
+    elif morphline=='sportscarSUV':
+        return ['sportscar','SUV']
+    elif morphline=='SUVMinivan':
+        return ['SUV','minivan']
+    elif morphline=='sportscarSedan':
+        return ['sportscar','sedan']
+    elif morphline=='sedanSUV':
+        return ['sedan','SUV']
+    elif morphline=='bedChair':
+        return ['bed','chair']
+    elif morphline=='bedTable':
+        return ['bed','table']
+    elif morphline=='benchBed':
+        return ['bench','bed']
+    elif morphline=='chairBench':
+        return ['chair','bench']
+    elif morphline=='chairTable':
+        return ['chair','table']
+    elif morphline=='tableBench':
+        return ['table','bench']
+    elif morphline=='limoToSUV':
+        return ['limo','SUV']    
+    elif morphline=='limoToSedan':
+        return ['sedan','limo']  
+    elif morphline=='limoToSmart':
+        return ['limo','smartcar']  
+    elif morphline=='smartToSedan':
+        return ['smartcar','sedan']    
+    elif morphline=='suvToSedan':
+        return ['SUV','sedan']  
+    elif morphline=='suvToSmart':
+        return ['SUV','smartcar']  
+    else:
+        return ['A','B'] 	
 
 def get_meta(w):
 
@@ -220,7 +259,7 @@ def get_meta(w):
 	                        runNum.append(ceil((float(aa[0]['trialNum'])-40+1)/numTrialsPreRun)+numTrainRuns) 
 	                    elif (float(aa[0]['trialNum'])>numTrialsPreTotal) & (float(aa[0]['trialNum'])< (numTrialsPreTotal+numTrialsTrainTotal)):
 	                        runNum.append(ceil((float(aa[0]['trialNum'])-numTrialsPreTotal)/numTrialsTrainRun)+numPreRuns)                         
-	                    options = mdr_helpers.getEndpoints(aa[0]['morphline'])  
+	                    options = getEndpoints(aa[0]['morphline'])  
 	                    response.append(aa[0]['response'])
 	                    condition.append([trained,near,far1,far2].index(aa[0]['morphline'])) # 0=Trained, 1=Near, 2=Far1, 3=Far2
 
@@ -325,7 +364,7 @@ def gen_regressor(DATADIR):
 	##col 1: onset time in ms
 	##col 2: duration in ms
 	##col 3: 'scale' factor, so just put 1's here unless you have a really good reason to do something else
-	##num_files = len(glob.glob(os.path.join('neurosketch_data/glmreg/','*.txt')))    
+	##num_files = len(glob.glob(os.path.join('neurosketch_metadata/glmreg/','*.txt')))    
 	datadir = os.path.join(os.getcwd(),DATADIR)
 	files = glob.glob(datadir+'/*.csv')
 	for f in files:
