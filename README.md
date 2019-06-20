@@ -15,6 +15,8 @@ Two objects drawn in alternating sequence during drawing runs. Each drawing tria
 see: `/metadata/fmri_sequence_info`
 
 # fMRI data preprocessing
+    Note: ALL OF THE OUTPUTS FROM THIS STAGE HAVE BEEN PROVIDED AND ARE 
+    READILY AVAILABLE, SO THESE STEPS ARE NOT NECESSARY
 
 ### INPUT:
 * DICOM archives for each subject: `data/raw/$SUBJ/raw.tar.gz`
@@ -96,6 +98,10 @@ All in anatomical space
     * e.g. `data/features/recognition/metadata_$SUBJ_$ROI_$PHASE.csv`
     * or `data/features/production/metadata_$SUBJ_$ROI_$PHASE.csv`
     * or `data/features/connectivity/metadata_$SUBJ_$PHASE.csv`
+* ROI Masks for each ROI saved as niftis
+    * For those derived from freesurfer: `rois/freesurfer/$SUBJ_ROI.nii.gz`
+    * For those derived from production univariate task masks `rois/production/$SUBJ_draw_task_mask.nii.gz`
+    * For those derived from intersect between freesurfer and univariate masks: `rois/intersect/$SUBJ_${ROI}Draw.nii.gz`
 <!---Note: before 4/23/18, canonical voxel matrices + metadata were in `neurosketch/data/neurosketch_voxelmat3mm_freesurfer_drawing`, renamed to `neurosketch/data/features/drawing`. 
 
     Note: path on jukebox (accessible via Spock) is: `/jukebox/ntb/projects/sketchloop02/data`
