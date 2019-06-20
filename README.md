@@ -27,6 +27,17 @@ see: `/metadata/fmri_sequence_info`
 
 ### RUNNING:
 *Note: Follows generally from [neuropipe framework](https://github.com/ntblab/neuropipe)*
+
+* This analysis assumes you have FSL 6.0.1, BXH, Matlab and Freesurfer installed
+* There will be cluster-specific changes required. Specifically, if you open `preprocessing/prototype/link/globals.sh`, 
+you'll find the following paths that will need to be updated to reflect the appropriate locations for BXH/XCEDE Tools, ImageMagick, 
+BIAC Matlab Tools respectively.
+
+        # add necessary directories to the system path
+        export BXH_DIR=/jukebox/ntb/packages/bxh_xcede_tools/bin
+        export MAGICK_HOME=/jukebox/ntb/packages/ImageMagick-6.5.9-9
+        export BIAC_HOME=/jukebox/ntb/packages/BIAC_matlab/mr
+
 * In `analysis/preprocessing`, there is a script called `scaffold`, which generates a new directory 
 in `analysis/preprocessing/subjects/` when run, pulling raw data, run-order files and regressor 
 files into their appropraite locations. This script duplicates a folder structure, and copies or links 
