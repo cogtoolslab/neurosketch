@@ -75,14 +75,15 @@ def load_connect_meta(this_sub):
     x = pd.read_csv(os.path.join(path_to_connect,this_file))
     return x
 
-def load_connect_feats(this_sub,this_roi_pair):
-    this_file = '{}_{}_featurematrix.npy'.format(this_sub,this_roi_pair)
+def load_connect_feats(this_sub,this_roi_pair, feature_type='connect'):
+    suffix = 'feature' if feature_type == 'connect' else 'stack'
+    this_file = '{}_{}_{}matrix.npy'.format(this_sub,this_roi_pair, suffix)
     y = np.load(os.path.join(path_to_connect, this_file))
     return y
 
-def load_connect_data(this_sub,this_roi_pair):
+def load_connect_data(this_sub,this_roi_pair, feature_type='connect'):
     x = load_connect_meta(this_sub)
-    y = load_connect_feats(this_sub,this_roi_pair)
+    y = load_connect_feats(this_sub,this_roi_pair, feature_type)
     assert y.shape[0] == x.shape[0]
     return x, y
 
@@ -1167,7 +1168,7 @@ def get_ci_bounds(x):
     ub = np.round(np.percentile(x,97.5),5)
     return (lb,ub)
 
-def make_drawing_connectivity_predictions(sub_list, roi_list, version='phase', logged=True):
+def make_drawing_connectivity_predictions(sub_list, roi_list, version='phase', feature_type='connect', logged=True):
     
     '''
     input:
@@ -1177,6 +1178,7 @@ def make_drawing_connectivity_predictions(sub_list, roi_list, version='phase', l
             phase: trains and tests within early production runs, or late production runs 
                 (i.e. train on run 1, test on run 2 and vice versa)
             allruns: trains on 3 runs, tests on a held out fourth (i.e. train on runs 1, 3 and 4, test on run 2).
+        feature_type: a string from options: ['connect', 'stacked']
         logged: boolean. If true, return log-probabilities. If false, return raw probabilities.
     assumes: that you have a directory containing trial-wise drawing run connectivity data, consisting 
                     of paired .npy voxel matrices and .csv metadata matrices
@@ -1189,8 +1191,9 @@ def make_drawing_connectivity_predictions(sub_list, roi_list, version='phase', l
         print('Now analyzing {}, {} ...'.format(this_roi, that_roi))
         acc = []
         for this_sub in sub_list:
+            print(this_sub, end = ' ')
             ## load subject data in
-            DM, DF = load_connect_data(this_sub, str(this_roi)+'_'+str(that_roi))
+            DM, DF = load_connect_data(this_sub, str(this_roi)+'_'+str(that_roi), feature_type)
 
             trained_objs = np.unique(DM.label.values)
 
@@ -1282,6 +1285,7 @@ def plot_connect_timecourse(ALLDM,
                             roi_list=['V1Draw','V2Draw','LOCDraw'],
                             render_cond=1,
                             version='phase',
+                            feature_type='connect',
                             logged=True,
                             proj_dir='../',
                             baseline_correct=False,
@@ -1363,7 +1367,7 @@ def plot_connect_timecourse(ALLDM,
             x = x.transpose()
             x.columns = ['probability',lookup[this_iv],'condition','sub']        
             toop = 'difference'
-            x.to_csv('{}/{}_{}_{}.csv'.format(results_dir, this_roi, that_roi, version))
+            x.to_csv('{}/{}_{}_{}_{}.csv'.format(results_dir, feature_type, this_roi, that_roi, version))
         fig, ax = plt.subplots(figsize=(5, 5))
         ## plot it
         if plotType == 'line':
@@ -1406,6 +1410,6 @@ def plot_connect_timecourse(ALLDM,
         if not os.path.exists(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop))):
             os.makedirs(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop)))
         plt.tight_layout()        
-        plt.savefig(os.path.join(proj_dir,'plots/{}/{}/{}/connect_timecourse_{}_{}_by_{}_{}.pdf'.\
-                    format(nb_name,lookup[this_iv],toop,this_roi,that_roi,lookup[this_iv],version)))
+        plt.savefig(os.path.join(proj_dir,'plots/{}/{}/{}/{}_timecourse_{}_{}_by_{}_{}.pdf'.\
+                    format(nb_name,lookup[this_iv],toop,feature_type,this_roi,that_roi,lookup[this_iv],version)))
         
