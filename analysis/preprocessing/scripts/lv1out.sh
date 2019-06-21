@@ -58,10 +58,19 @@ do
   subj=$(echo ${subject} | cut -d"_" -f1)
   while [ ! -e "${PROJECT_DIR}/../../data/features/production/${subj}_ParietalDraw_featurematrix.npy" ]; do
     sleep 20
-    echo "waiting"
+    echo "waiting for draw features"
   done
   echo "${subject} --- generating connectivity features -- $(date)"
-  #sbatch scripts/features_metadata.sh connect_features.py
+  sbatch scripts/features_metadata.sh connect_features.py
   popd >/dev/null
 done
 
+for subject in $subjectList
+do
+  subj=$(echo ${subject} | cut -d"_" -f1)
+  while [ ! -e "${PROJECT_DIR}/../../data/features/connectivity/${subj}_LOCDraw_ParietalDraw_stackmatrix.npy" ]; do
+    sleep 1
+    echo "waiting for ${subject} connectivity features to be finished"
+  done
+done
+echo "FINISHED"

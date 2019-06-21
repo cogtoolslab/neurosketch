@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import pandas as pd
 import nibabel as nib
+import itertools
 
 subject = sys.argv[1]
 subject = subject.split('_')[0]
@@ -12,63 +13,66 @@ print(proj_dir)
 
 data_dir = os.path.abspath(os.path.join(proj_dir,'..','..','data'))
 feature_dir = os.path.abspath(os.path.join(data_dir, 'features')) 
-prod_regdir = os.path.abspath(os.path.join(proj_dir,'subjects/{}_neurosketch/draw_reg'))
-prod_reg = os.path.abspath(os.path.join(prod_regdir,'{}.txt'))
-filt_func = os.path.abspath(os.path.join(proj_dir,'subjects/{}_neurosketch/analysis/firstlevel/parameter',
-                                         '{}_neurosketch_{}_run_{}_filtfuncHIRES.nii.gz'))
-roi_dir = os.path.abspath(os.path.join(proj_dir,'subjects/{}_neurosketch/analysis/firstlevel/surfROI'))
-out_dir = os.path.abspath(os.path.join(feature_dir, 'production')) 
+draw_features = os.path.abspath(os.path.join(feature_dir, 'production')) 
+out_dir = os.path.abspath(os.path.join(feature_dir, 'connectivity')) 
 if not os.path.isdir(out_dir):
     os.mkdir(out_dir)
 
-objects = [txt.split('.txt')[0] for txt in os.listdir(prod_regdir.format(subject))]
-print(objects)
-roi_list_masks = ['V1','V2','LOC_FS','IT_FS','fusiform_FS','parahippo_FS','PRC_FS','ento_FS','hipp_FS',
-                  'V1Draw', 'V2Draw', 'LOCDraw', 'ParietalDraw']
-roi_list_names = ['V1','V2','LOC','IT','fusiform','parahippo','PRC','ento','hipp', 
-                  'V1Draw', 'V2Draw', 'LOCDraw', 'ParietalDraw']
+roi_list = ['V1Draw', 'V2Draw', 'LOCDraw', 'ParietalDraw']
+
+def load_draw_meta(this_sub):
+    this_file = 'metadata_{}_drawing.csv'.format(this_sub)
+    x = pd.read_csv(os.path.join(draw_features,this_file))
+    return x
 
 
-for phase in ['12', '34']:
-    # initialize data columns
-    subj = [subject] * 460
-    label = []
-    run_num = [phase[0]]*230 + [phase[1]]*230
-    TR_num = []
+def load_draw_feats(this_sub,this_roi):
+    this_file = '{}_{}_featurematrix.npy'.format(this_sub,this_roi)
+    y = np.load(os.path.join(draw_features,this_file))
+    return y
 
-    for rn, run in enumerate(phase):
-        # load subject's time series for this run
-        timeseries = nib.load(filt_func.format(subject, subject, dat_type, run))
-        timeseries = timeseries.get_data().transpose((3, 0, 1, 2))
 
-        # use information in regressor/run_x folder to make hasImage vector
-        # associated TR is just the hasImage index, converted to a float
-        Onsets = [0]*308
-        for obj in objects:
-            with open(prod_reg.format(subject, obj)) as f:
-                times = [line.split(' ')[0] for line in f.read().split('\n')[:-1]]
-                for t in times:
-                    TR = int(float(t)/1.5)
-                    print(t, TR, TR+23)
-                    for tr in range(TR, TR+23):
-                        Onsets[tr] = obj
+def load_draw_data(this_sub,this_roi):
+    x = load_draw_meta(this_sub)
+    y = load_draw_feats(this_sub,this_roi)
+    assert y.shape[0] == x.shape[0]
+    return x,y
 
-        # wherever hasImage, we want the features
-        features = [timeseries[n+3] for n, onset in enumerate(Onsets) if onset != 0]
-        labels = [label for label in Onsets if label != 0]
-        FEATURES = np.array(features) if rn == 0 else np.vstack((FEATURES, np.array(features)))
-        LABELS = labels if rn == 0 else LABELS + labels
-    np.save('{}/{}_{}_featurematrix.npy'.format(out_dir, subject, phase), FEATURES)
+
+all_pairs = itertools.combinations(roi_list, 2)
+for (this_roi, that_roi) in all_pairs:
+    print(this_roi, that_roi)
+    DM_1, DF_1 = load_draw_data(subject, this_roi)
+    DM_2, DF_2 = load_draw_data(subject, that_roi)
+    assert DF_1.shape[0] == DF_2.shape[0]
+    print(DF_1.shape)
     
-    for roi, roiname in zip(roi_list_masks[:], roi_list_names[:]):
-        mask = nib.load('{}/{}.nii.gz'.format(roi_dir.format(subject), roi))
-        maskDat = mask.get_data()
-        masked = FEATURES[:, maskDat == 1]
-        np.save('{}/{}_{}_{}_featurematrix.npy'.format(out_dir, subject, roiname, phase), masked)
-        
-        ## metadata
-        x = pd.DataFrame([subj, LABELS, run_num, TR_num]) # lists of the same length
-        x = x.transpose()
-        x.columns = ['subj','label','run_num', 'TR_num']
-        x.to_csv('{}/metadata_{}_{}_{}.csv'.format(out_dir, subject, roiname, phase))
+    this_roi_shape = DF_1.shape[1]
+    that_roi_shape = DF_2.shape[1]
+    rois_stacked = np.hstack((DF_1, DF_2))
+    assert rois_stacked.shape[1] == this_roi_shape + that_roi_shape
+    
+    trial = 0
+    newDF = []
+    stackDF = []
+    newDM = []
+    outmeta = '{}/metadata_{}_corrs.csv'.format(out_dir, subject)
 
+    for ind in range(0, 920, 23):
+        if not os.path.exists(outmeta):
+            tempDM = np.array(DM_1.iloc[ind].loc[['subj', 'label', 'run_num', 'trial_num']])
+            newDM = tempDM if len(newDM) == 0 else np.vstack((newDM, tempDM))
+        
+        tempDF = rois_stacked[ind:ind+23]
+        corrs = np.corrcoef(np.transpose(tempDF))[this_roi_shape:, :this_roi_shape]
+        corrs = corrs.flatten()
+        newDF = corrs if len(newDF) == 0 else np.vstack((newDF, corrs))
+        
+        collapse = tempDF.flatten()
+        stackDF = collapse if len(stackDF) == 0 else np.vstack((stackDF, collapse))
+
+    if not os.path.exists(outmeta):
+        newDM = pd.DataFrame(newDM, columns=['subj', 'label', 'run_num', 'trial_num'])
+        newDM.to_csv(outmeta)
+    np.save('{}/{}_{}_{}_featurematrix.npy'.format(out_dir, subject, this_roi, that_roi), newDF)
+    np.save('{}/{}_{}_{}_stackmatrix.npy'.format(out_dir, subject, this_roi, that_roi), stackDF)
