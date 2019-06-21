@@ -69,7 +69,6 @@ do
 done
 
 
-echo "== finished analysis of $SUBJ at $(date) =="
 
 
 popd > /dev/null   # return to the directory this script was run from, quietly

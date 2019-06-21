@@ -7,6 +7,14 @@ import nibabel as nib
 subject = sys.argv[1]
 subject = subject.split('_')[0]
 proj_dir = sys.argv[2]
+try:
+    i0 = int(sys.argv[3])
+except:
+    i0 = 0
+try:
+    i1 = int(sys.argv[4])
+except:
+    i1 = None
 dat_type = 'draw'
 print(proj_dir)
 
@@ -60,7 +68,7 @@ for phase in ['1234']:
         LABELS = labels if rn == 0 else LABELS + labels
     np.save('{}/{}_featurematrix.npy'.format(out_dir, subject), FEATURES)
     
-    for roi, roiname in zip(roi_list_masks[:], roi_list_names[:]):
+    for roi, roiname in zip(roi_list_masks[i0:i1], roi_list_names[i0:i1]):
         mask = nib.load('{}/{}.nii.gz'.format(roi_dir.format(subject), roi))
         maskDat = mask.get_data()
         masked = FEATURES[:, maskDat == 1]

@@ -49,5 +49,13 @@ do
   cp group/${subject}.gfeat/cope1.feat/thresh_zstat1.nii.gz group/${subject}.gfeat/draw_task_mask.nii.gz
   bash scripts/binarize_hires.sh $subject
   echo "masks made -- $(date)"
+  pushd subjects/$subject >/dev/null
+  sbatch scripts/features_metadata.sh draw_features.py 9
+  subj=$(echo ${subject} | cut -d"_" -f1)
+  while [ ! -e "${PROJECT_DIR}/../../data/features/production/${subj}_ParietalDraw_featurematrix.npy" ]; do
+    sleep 20
+  done
+  sbatch scripts/features_metadata.sh connect_features.py
+  popd >/dev/null
 done
 

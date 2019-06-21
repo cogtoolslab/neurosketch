@@ -46,12 +46,12 @@ recList="1 2 3 4 5 6"
 
 echo "== beginning analysis of $SUBJ at $(date) ==" | tee status
 
-bash prep.sh
+#bash prep.sh
 echo "i. prep done -- $(date)" | tee status
-bash scripts/render_fsf_templates_draw.sh
-bash scripts/render_fsf_templates_glm4.sh
+#bash scripts/render_fsf_templates_draw.sh
+#bash scripts/render_fsf_templates_glm4.sh
 echo "ii. fsf templates done -- $(date)" | tee status
-bash brain_extract_first.sh | tee status
+#bash brain_extract_first.sh | tee status
 echo "iii. brain extraction done -- $(date)" | tee status
 
 ### Run freesurfer on the anatomical to extract ROIs
@@ -65,16 +65,16 @@ echo "iv. freesurfer started -- $(date)" | tee status
 
 for r in $drawList
 do
-     feat $FSF_DIR/draw_run_${r}.fsf &
+#     feat $FSF_DIR/draw_run_${r}.fsf &
      echo "drawing run ${r} feat started -- $(date)" | tee status
-     sleep 30
+#     sleep 30
 done
 
 for r in $recList
 do
-     feat $FSF_DIR/glm4_recognition_run_${r}.fsf &
+#     feat $FSF_DIR/glm4_recognition_run_${r}.fsf &
      echo "recognition run ${r} feat started -- $(date)" | tee status
-     sleep 30
+#     sleep 30
 done
 echo "v. all feats started -- $(date)" | tee status
 
@@ -117,7 +117,7 @@ render_secondlevel $FSF_DIR/draw_level2.fsf.template \
 sleep 10
 
 # Run higher order drawing run analysis
-feat $FSF_DIR/draw_level2.fsf
+#feat $FSF_DIR/draw_level2.fsf
 echo "vii. Running second level analysis -- $(date)" | tee status
 
 while [ ! -d "${LEVEL2}/draw.gfeat" ]; do
@@ -125,41 +125,46 @@ while [ ! -d "${LEVEL2}/draw.gfeat" ]; do
 done
 
 # Move reg files over
-cp -R $SUBJECTS_DIR/draw_run_1.feat/reg analysis/secondlevel/draw.gfeat
+#cp -R $SUBJECTS_DIR/draw_run_1.feat/reg analysis/secondlevel/draw.gfeat
 #cp $SUBJECTS_DIR/draw_run_1.feat/example_func.nii.gz analysis/secondlevel/draw.gfeat
 
 
 # convert copes and filtered func data to subject anatomical space
 echo "viii. Running conversion scripts for copes and filtered func -- $(date)" | tee status
-sbatch scripts/convert_copes.sh
-sbatch scripts/flirt_filt.sh
+#sbatch scripts/convert_copes.sh
+#sbatch scripts/flirt_filt.sh
 echo "submitted jobs -- $(date)" | tee status
 
 ### Wait for freesurfer to finish
-mv $FIRSTLEVEL_DIR/register.dat $FIRSTLEVEL_DIR/freesurfer/register.dat
-mv $FIRSTLEVEL_DIR/surfdone $FIRSTLEVEL_DIR/freesurfer/surfdone
+#mv $FIRSTLEVEL_DIR/register.dat $FIRSTLEVEL_DIR/freesurfer/register.dat
+#mv $FIRSTLEVEL_DIR/surfdone $FIRSTLEVEL_DIR/freesurfer/surfdone
 bash scripts/wait-for-surf.sh .
 echo "ix. freesurfer done -- $(date)" | tee status
 
-
+# WAIT TO ENSURE THAT ALL FEATURES ARE IN THE CORRECT LOCATION
 while [ ! -e "${FIRSTLEVEL_DIR}/parameter/2mmExample.nii.gz" ]; do
-  echo "conversion not yet complete"
+  sleep 1
+done
+while [ ! -e "${FIRSTLEVEL_DIR}/parameter/${SUBJ}_draw_run_4_filtfuncHIRES.nii.gz" ]; do
+  sleep 1
+done
+while [ ! -e "${FIRSTLEVEL_DIR}/parameter/${SUBJ}_recog_run_6_filtfuncHIRES.nii.gz" ]; do
   sleep 1
 done
 
 echo "x. Creating surfer ROIs -- $(date)" | tee status
-bash scripts/surfROI.sh
+#bash scripts/surfROI.sh
 echo "x. Surfer ROIs done -- $(date)" | tee status
 
 echo "xi. Creating features -- $(date)" | tee status
 sbatch scripts/features_metadata.sh recog_features.py
-sbatch scripts/features_metadata.sh draw_features.py
+sbatch scripts/features_metadata.sh draw_features.py 0 9
 
 subj=$(echo ${SUBJ} | cut -d"_" -f1)
-while [ ! -e "${PROJ_DIR}/data/features/production/${subj}_ParietalDraw_featurematrix.npy" ]; do
+while [ ! -e "${PROJ_DIR}/../../data/features/production/${subj}_hipp_featurematrix.npy" ]; do
   sleep 20
 done
-while [ ! -e "${PROJ_DIR}/data/features/recognition/metadata_${subj}_hipp_56.csv" ]; do
+while [ ! -e "${PROJ_DIR}/../../data/features/recognition/metadata_${subj}_hipp_56.csv" ]; do
   sleep 20
 done
 echo "xi. Features done! -- $(date)" | tee status

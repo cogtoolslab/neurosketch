@@ -12,4 +12,4 @@ source globals.sh
 module load anacondapy
 source activate $CONDA_ENV
 
-python ./scripts/$1 $SUBJ $PROJ_DIR 
+python ./scripts/$1 $SUBJ $PROJ_DIR $2 $3
