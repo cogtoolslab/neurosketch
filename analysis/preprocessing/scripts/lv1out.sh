@@ -34,10 +34,9 @@ do
   echo "subject started -- $(date)"
   delete=($subject)
   allothers=("${subjectList[@]/$delete}")
-  echo $subject
-  echo "making template"
+  echo "${subject} --- making template"
   bash scripts/make_template.sh "${allothers[@]}" $subject
-  echo "running feat"
+  echo "${subject} --- running feat"
   feat group/${subject}.fsf &
   sleep 5
 done
@@ -46,21 +45,23 @@ sleep 250
 # wait for feats to finish
 # make mask (intersect of univariate mask with freesurfer ROIs)
 # make features for the given subject
-# run connectivity classification analysis
 for subject in $subjectList
 do
-  echo "waiting for feat -- $(date)"
+  echo "${subject} --- waiting for feat -- $(date)"
   bash scripts/wait-for-feat.sh group/${subject}.gfeat
   cp group/${subject}.gfeat/cope1.feat/thresh_zstat1.nii.gz group/${subject}.gfeat/draw_task_mask.nii.gz
   bash scripts/binarize_hires.sh $subject
-  echo "masks made -- $(date)"
+  echo "${subject} --- masks made -- $(date)"
   pushd subjects/$subject >/dev/null
   sbatch scripts/features_metadata.sh draw_features.py 9
+  echo "${subject} --- generating features for intersect rois -- $(date)"
   subj=$(echo ${subject} | cut -d"_" -f1)
   while [ ! -e "${PROJECT_DIR}/../../data/features/production/${subj}_ParietalDraw_featurematrix.npy" ]; do
     sleep 20
+    echo "waiting"
   done
-  sbatch scripts/features_metadata.sh connect_features.py
+  echo "${subject} --- generating connectivity features -- $(date)"
+  #sbatch scripts/features_metadata.sh connect_features.py
   popd >/dev/null
 done
 
