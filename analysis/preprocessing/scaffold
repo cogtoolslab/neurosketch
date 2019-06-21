@@ -97,6 +97,8 @@ for path in $(find $COPY_DIR/*); do
   mv $tmp $subj_dir/$rel_path
 done
 
+mkdir ./subjects/$subj/regressor
+mkdir ./subjects/$subj/draw_reg
 ## TEMPORARY
 cp -R ./../../../sketchloop02/subjects/$subj/regressor/* ./subjects/$subj/regressor
 ## TO BE REMOVED
