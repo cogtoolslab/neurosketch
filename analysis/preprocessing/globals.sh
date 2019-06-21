@@ -8,5 +8,4 @@
 PROJECT_DIR=$(pwd)
 SUBJECTS_DIR=subjects
 GROUP_DIR=group
-
-
+CONDA_ENV=prep

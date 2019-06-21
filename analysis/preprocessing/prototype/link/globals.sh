@@ -31,4 +31,4 @@ EV_DIR=regressor
 EV_DIR2=draw_reg
 BEHAVIORAL_OUTPUT_DIR=output/behavioral
 STANDARD_BRAIN=$PROJ_DIR/standard/MNI152_T1_2mm_brain
-CONDA_ENV=/jukebox/ntb/jdw83/brainiak
+CONDA_ENV=prep

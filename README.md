@@ -28,7 +28,12 @@ see: `/metadata/fmri_sequence_info`
 ### RUNNING:
 *Note: Follows generally from [neuropipe framework](https://github.com/ntblab/neuropipe)*
 
-* This analysis assumes you have FSL 6.0.1, BXH, Matlab and Freesurfer installed
+* This analysis assumes you have conda, FSL 6.0.1, BXH, Matlab and Freesurfer installed
+
+* To start, create a conda environment using the provided file:
+	
+	$ conda env create -f environment.yml
+
 * There will be cluster-specific changes required. Specifically, if you open `preprocessing/prototype/link/globals.sh`, 
 you'll find the following paths that will need to be updated to reflect the appropriate locations for BXH/XCEDE Tools, ImageMagick, 
 BIAC Matlab Tools respectively.

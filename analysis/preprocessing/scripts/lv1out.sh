@@ -15,7 +15,7 @@
 
 source globals.sh
 module load anacondapy/3.4
-. activate rsa
+source activate $CONDA_ENV
 
 echo $SLURM_SUBMIT_DIR
 pushd $SLURM_SUBMIT_DIR > /dev/null
