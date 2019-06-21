@@ -46,10 +46,6 @@ fi
 subj=$1
 subj_dir=$SUBJECTS_DIR/$subj
 
-if [ ! -d "$SUBJECTS_DIR" ]; then
-echo "if this is your first time setting up a subject with NeuroPipe,"
-echo "read README.txt in the subject's directory (just created)"
-fi
 
 mkdir -p $subj_dir
 
