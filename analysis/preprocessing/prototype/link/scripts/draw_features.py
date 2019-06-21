@@ -16,7 +16,7 @@ try:
 except:
     i1 = None
 dat_type = 'draw'
-print(proj_dir)
+
 
 data_dir = os.path.abspath(os.path.join(proj_dir,'..','..','data'))
 feature_dir = os.path.abspath(os.path.join(data_dir, 'features')) 
@@ -30,7 +30,7 @@ if not os.path.isdir(out_dir):
     os.mkdir(out_dir)
 
 objects = [txt.split('.txt')[0] for txt in os.listdir(prod_regdir.format(subject))]
-print(objects)
+
 roi_list_masks = ['V1','V2','LOC_FS','IT_FS','fusiform_FS','parahippo_FS','PRC_FS','ento_FS','hipp_FS',
                   'V1Draw', 'V2Draw', 'LOCDraw', 'ParietalDraw']
 roi_list_names = ['V1','V2','LOC','IT','fusiform','parahippo','PRC','ento','hipp', 
@@ -57,7 +57,6 @@ for phase in ['1234']:
                 times = [line.split(' ')[0] for line in f.read().split('\n')[:-1]]
                 for t in times:
                     TR = int(float(t)/1.5)
-                    print(t, TR, TR+23)
                     for tr in range(TR, TR+23):
                         Onsets[tr] = obj
 
