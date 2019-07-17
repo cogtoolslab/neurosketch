@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 from scipy.stats import linregress
 
+################### GLOBALS ###################################################################
+
 plt.switch_backend('agg')
 
 bar_width = 1
@@ -29,7 +31,12 @@ compiled['targ_diff'] = compiled['targ_corr'] - compiled[['base1corr', 'base2cor
 compiled['comp_diff'] = compiled['comp_corr'] - compiled[['base1corr', 'base2corr']].mean(axis = 1)
 compiled['other'] = compiled[['base1corr', 'base2corr']].mean(axis = 1)
 
-
+# paths
+curr_dir = os.getcwd()
+proj_dir = os.path.abspath(os.path.join(curr_dir,'..','..')) ## use relative paths
+data_dir = os.path.abspath(os.path.join(curr_dir,'..','..','data')) ## use relative paths 'D:\\data'
+results_dir = os.path.join(proj_dir, 'csv')
+plot_dir = os.path.join(results_dir,'plots')
 
 # A few possible ROI lists
 pooled = ['Occ', 'VT', 'MTL']
@@ -210,7 +217,7 @@ def compute_run_corr(input_list,compiled, measure):
 			correlations.iloc[pos,3] = slope
 			correlations.iloc[pos,4] = spearman
 			increment_pos()
-	correlations.to_csv('results/target_vs_competitor_similarity_trend_across_runs_by_roi.csv')
+	correlations.to_csv('results/csv/target_vs_competitor_similarity_trend_across_runs_by_roi.csv')
 	
 
 
@@ -252,7 +259,7 @@ def plot_two_time(input_list, compiled, measure1, measure2, yaxtitle, figtitle, 
 				plt.yticks([])
 			plt.tight_layout()
 			plt.xlabel('Run ' + str(run))
-		plt.savefig('plots/' + str(named_roi) + '_' + str(figtitle) + '.png')
+		plt.savefig(os.path.join(plot_dir,str(named_roi) + '_' + str(figtitle) + '.png'))
 		plt.clf()
 
 # Plots two lines over runs (e.g. targ_corr and comp_corr)

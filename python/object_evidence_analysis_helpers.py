@@ -29,7 +29,8 @@ colors = sns.color_palette("cubehelix", 5)
 curr_dir = os.getcwd()
 proj_dir = os.path.abspath(os.path.join(curr_dir,'..','..')) ## use relative paths
 data_dir = os.path.abspath(os.path.join(curr_dir,'..','..','data')) ## use relative paths 'D:\\data'
-results_dir = os.path.join(proj_dir, 'csv')
+results_dir = os.path.join(proj_dir, 'results','csv')
+plot_dir = os.path.join(proj_dir,'results','plots')
 
 ################### GENERAL HELPERS ###########################################################
 
@@ -757,7 +758,8 @@ def plot_summary_timecourse(ALLDM,
         proj_dir: root directory of project.
     
     output: 
-        saves PNG versions of plots in plots dir, which is located at top level of project directory
+        saves PNG versions of plots in plots dir, which is located within results dir, which is
+        itself at top of project hierarchy
     '''    
     
     subs = np.unique(ALLDM.subj.values)
@@ -852,10 +854,10 @@ def plot_summary_timecourse(ALLDM,
         plt.xlabel(lookup[this_iv])
         plt.xticks(np.arange(1,np.max(x['timePlusOne'].values)+1))
         plt.tick_params(axis='both', which='major', labelsize=14)
-        if not os.path.exists(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop))):
-            os.makedirs(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop)))
+        if not os.path.exists(os.path.join(plot_dir,'{}/{}/{}'.format(nb_name,lookup[this_iv],toop))):
+            os.makedirs(os.path.join(plot_dir,'{}/{}/{}'.format(nb_name,lookup[this_iv],toop)))
         plt.tight_layout(rect=[0,0,1,0.7])
-        plt.savefig(os.path.join(proj_dir,'plots/{}/{}/{}/prob_timecourse_{}_by_{}_{}.pdf'.\
+        plt.savefig(os.path.join(plot_dir,'{}/{}/{}/prob_timecourse_{}_by_{}_{}.pdf'.\
                     format(nb_name,lookup[this_iv],toop,this_roi,lookup[this_iv],version)))
         plt.close(fig)    
 
@@ -1407,9 +1409,9 @@ def plot_connect_timecourse(ALLDM,
             plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=3, mode="expand", borderaxespad=0., fontsize=20)                        
         plt.xlabel('Phase Number', fontsize=20, **{'fontname':'Arial Narrow'})
         plt.ylabel('Log Probability', fontsize=20, **{'fontname':'Arial Narrow'})
-        if not os.path.exists(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop))):
-            os.makedirs(os.path.join(proj_dir,'plots/{}/{}/{}'.format(nb_name,lookup[this_iv],toop)))
+        if not os.path.exists(os.path.join(plot_dir,'{}/{}/{}'.format(nb_name,lookup[this_iv],toop))):
+            os.makedirs(os.path.join(plot_dir,'{}/{}/{}'.format(nb_name,lookup[this_iv],toop)))
         plt.tight_layout()        
-        plt.savefig(os.path.join(proj_dir,'plots/{}/{}/{}/{}_timecourse_{}_{}_by_{}_{}.pdf'.\
+        plt.savefig(os.path.join(plot_dir,'{}/{}/{}/{}_timecourse_{}_{}_by_{}_{}.pdf'.\
                     format(nb_name,lookup[this_iv],toop,feature_type,this_roi,that_roi,lookup[this_iv],version)))
         
