@@ -1,0 +1,41 @@
+---
+title: "1_prepost_recognition_classifier"
+output: html_notebook
+---
+
+## load necessary packages
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggthemes)
+library(lme4)
+library(lmerTest)
+library(tidyboot)
+```
+
+## fit a single ROI
+```{r}
+rois = c('V1','V2','LOC','FUS','PHC','IT','ENT','PRC','HC')
+
+d <- read_csv('../csv/object_classifier_prepost_accuracy.csv') %>%
+    filter(roi_formatted=='V1')
+   
+m <- lmer(correct ~ phase * trained + (1 | subj), data = d)
+summary(m)
+```
+
+## loop through all ROIs
+```{r}
+rois = c('V1','V2','LOC','FUS','PHC','IT','ENT','PRC','HC')
+
+d <- read_csv('../csv/object_classifier_prepost_accuracy.csv')
+   
+map_dfr(rois, ~ {
+  lmer.out <- lmer(correct ~ phase * trained + (1 | subj), 
+                   data = d %>% filter(roi_formatted == .x)) %>%
+    tidy('fixed')
+  colnames(lmer.out) <- c('term', 'estimate', 'std.error', 'df', 'statistic', 'p.value')
+  return(lmer.out %>%
+     mutate(roi = .x))
+})
+```
