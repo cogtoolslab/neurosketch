@@ -1,1 +1,0 @@
-This directory contains results plots from notebook 3_relate_drawing_training_and_recog_prepost.

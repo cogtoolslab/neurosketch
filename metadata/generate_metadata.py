@@ -17,7 +17,7 @@ conn = pm.MongoClient(port=20809)
 DBNAME = conn['during_morph_drawing_recognition']
 COLNAME = DBNAME['fmri3.files']
 coll=COLNAME
-DATADIR = 'neurosketch_metadata'
+DATADIR = 'regressors'
 
 mdtd = cPickle.load(open('neurosketch_design.pkl'))
 
