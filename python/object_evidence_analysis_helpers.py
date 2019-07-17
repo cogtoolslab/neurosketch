@@ -1191,7 +1191,7 @@ def make_drawing_connectivity_predictions(sub_list, roi_list, version='phase', f
         print('Now analyzing {}, {} ...'.format(this_roi, that_roi))
         acc = []
         for this_sub in sub_list:
-            print(this_sub, end = ' ')
+            print(this_sub)
             ## load subject data in
             DM, DF = load_connect_data(this_sub, str(this_roi)+'_'+str(that_roi), feature_type)
 
