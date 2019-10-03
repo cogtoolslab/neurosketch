@@ -9,7 +9,6 @@ from nilearn import image
 from sklearn.metrics.pairwise import pairwise_distances
 import nibabel as nib
 
-from scipy.misc import imread, imresize
 from scipy.stats import norm, linregress
 import scipy.stats as stats
 import itertools
