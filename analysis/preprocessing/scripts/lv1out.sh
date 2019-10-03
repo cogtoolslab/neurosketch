@@ -8,7 +8,7 @@
 #SBATCH -J 'connect'
 #SBATCH -o slurm-%j.out
 #SBATCH -p all
-#SBATCH -t 2:00:00
+#SBATCH -t 3:00:00
 #SBATCH --export=globals.sh
 
 #set -e # stop immediately when an error occurs
@@ -35,26 +35,32 @@ do
   delete=($subject)
   allothers=("${subjectList[@]/$delete}")
   echo "${subject} --- making template"
-  bash scripts/make_template.sh "${allothers[@]}" $subject
+#  bash scripts/make_template.sh "${allothers[@]}" $subject
   echo "${subject} --- running feat"
-  feat group/${subject}.fsf &
-  sleep 5
+#  feat group/${subject}.fsf &
+#  sleep 5
 done
 
-sleep 250
+#sleep 250
 # wait for feats to finish
 # make mask (intersect of univariate mask with freesurfer ROIs)
 # make features for the given subject
 for subject in $subjectList
 do
+  pushd $SLURM_SUBMIT_DIR > /dev/null
   echo "${subject} --- waiting for feat -- $(date)"
   bash scripts/wait-for-feat.sh group/${subject}.gfeat
-  cp group/${subject}.gfeat/cope1.feat/thresh_zstat1.nii.gz group/${subject}.gfeat/draw_task_mask.nii.gz
+#  cp group/${subject}.gfeat/cope1.feat/thresh_zstat1.nii.gz group/${subject}.gfeat/draw_task_mask.nii.gz
   bash scripts/binarize_hires.sh $subject
   echo "${subject} --- masks made -- $(date)"
   pushd subjects/$subject >/dev/null
   sbatch scripts/features_metadata.sh draw_features.py 9
   echo "${subject} --- generating features for intersect rois -- $(date)"
+done
+
+for subject in $subjectList
+do
+  pushd subjects/$subject >/dev/null
   subj=$(echo ${subject} | cut -d"_" -f1)
   while [ ! -e "${PROJECT_DIR}/../../data/features/production/${subj}_ParietalDraw_featurematrix.npy" ]; do
     sleep 20
@@ -69,8 +75,10 @@ for subject in $subjectList
 do
   subj=$(echo ${subject} | cut -d"_" -f1)
   while [ ! -e "${PROJECT_DIR}/../../data/features/connectivity/${subj}_LOCDraw_ParietalDraw_stackmatrix.npy" ]; do
+  echo "waiting for ${subject} connectivity features to be finished"
+#  while [ ! -e "${PROJECT_DIR}/../../data/features/connectivity/${subj}_PRC_ento_stackmatrix.npy" ]; do
     sleep 1
-    echo "waiting for ${subject} connectivity features to be finished"
   done
+  echo "${subject} connectivity features finished"
 done
 echo "FINISHED"
