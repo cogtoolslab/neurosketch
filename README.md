@@ -1,18 +1,34 @@
-# Goal of study 
-How are visual production and visual recognition of objects related in the brain?
-How does visual production training influence organization of neural object representations?
+# Relating Visual Production and Recognition of Objects in Human Visual Cortex
+
+This repo contains the code used to produce the results in [Fan et al., Journal of Neuroscience (2019)](https://www.jneurosci.org/content/early/2019/12/23/JNEUROSCI.1843-19.2019). We also provide links to download preprocessed fMRI data used in the main analysis notebooks. 
+
+1. [Abstract](#abstract)
+2. [Experimental procedure](#experimental-procedure)
+3. [Scanning parameters](#scanning-parameters)
+4. [fMRI data preprocessing](#fmri-data-preprocessing)
+5. [Input to main analyses](#input-to-main-analyses)
+6. [List of main analysis notebooks](#list-of-main-analysis-notebooks)
+
+-----
+# Abstract
+Drawing is a powerful tool that can be used to convey rich perceptual information about objects in the world. 
+What are the neural mechanisms that enable us to produce a recognizable drawing of an object, and how does this visual production experience influence how this object is represented in the brain? 
+Here we evaluate the hypothesis that producing and recognizing an object recruit a shared neural representation, such that repeatedly drawing the object can enhance its perceptual discriminability in the brain.
+We scanned human participants (N=31; 11 male) using fMRI across three phases of a training study: during training, participants repeatedly drew two objects in an alternating sequence on an MR-compatible tablet; 
+before and after training, they viewed these and two other control objects, allowing us to measure the neural representation of each object in visual cortex.
+We found that: (1) stimulus-evoked representations of objects in visual cortex are recruited during visually cued production of drawings of these objects, even throughout the period when the object cue is no longer present; (2) the object currently being drawn is prioritized in visual cortex during drawing production, while other repeatedly drawn objects are suppressed; and (3) patterns of connectivity between regions in occipital and parietal cortex supported enhanced decoding of the currently drawn object across the training phase, suggesting a potential neural substrate for learning how to transform perceptual representations into representational actions. 
+Taken together, our study provides novel insight into the functional relationship between visual production and recognition in the brain.
 
 # Experimental procedure
 
-10 runs in total: 2 (localizer recognition runs) + 2 (pre recognition runs) + 4 (drawing runs) + 2 (post recognition runs)
+- Each participant completed 10 runs in total: 2 (localizer recognition runs) + 2 (pre recognition runs) + 4 (drawing runs) + 2 (post recognition runs)
+- There were 4 3D objects used in this study: bed, bench chair, table.
+- During recognition runs, participants viewed each object 20 times per run (stimulus duration = 1000ms). 
+- During production runs, participants drew two objects in alternating sequence. Each drawing trial lasted 23 TR (each TR = 1.5s).
 
-4 objects: bed, bench chair, table.
-Viewed each object 20 times per run during recognition runs. Trial ISI jittered. 
-Two objects drawn in alternating sequence during drawing runs. Each drawing trial lasted 23 TR’s.
+# Scanning parameters
 
-# Scanning parameters & sequence information
-
-see: `/metadata/fmri_sequence_info`
+For full information about scanning parameters, see: `/metadata/fmri_sequence_info`
 
 # fMRI data preprocessing
     Note: ALL OF THE OUTPUTS FROM THIS STAGE HAVE BEEN PROVIDED AND ARE 
@@ -118,13 +134,13 @@ All in anatomical space
     * For those derived from freesurfer: `rois/freesurfer/$SUBJ_ROI.nii.gz`
     * For those derived from production univariate task masks `rois/production/$SUBJ_draw_task_mask.nii.gz`
     * For those derived from intersect between freesurfer and univariate masks: `rois/intersect/$SUBJ_${ROI}Draw.nii.gz`
+
 <!---Note: before 4/23/18, canonical voxel matrices + metadata were in `neurosketch/data/neurosketch_voxelmat3mm_freesurfer_drawing`, renamed to `neurosketch/data/features/drawing`. 
 
     Note: path on jukebox (accessible via Spock) is: `/jukebox/ntb/projects/sketchloop02/data`
 -->
-# Main analyses 
 
-## INPUT to analysis:
+# Input to main analyses
 
 There is a master DATA dir containing all processed fMRI data in standard format:
 * `DATA/features` contains all feature matrices and metadata from all phases, ROIs, and subjects.
@@ -135,10 +151,15 @@ There is a master DATA dir containing all processed fMRI data in standard format
 	* `DATA/copes/recog/objectGLM` recognition cope maps from object GLM
 	* `DATA/copes/draw/taskGLM` drawing cope maps from drawing_task GLM
 
-# List of main analysis notebooks:
-1. Measure Object Evidence on Recognition Run Data in Visual Cortex
+**Link to download data will be provided here soon.**
 
-2. Measure Object Evidence on Drawing Run Data in Visual Cortex
+# List of main analysis notebooks
 
-3. Measure Patterns of Connectivity Between Early Visual and Parietal Regions
+Link to [analysis notebooks](https://github.com/cogtoolslab/neurosketch/tree/master/analysis/notebooks).
+
+1. [Measure Object Evidence on Recognition Run Data in Visual Cortex](https://github.com/cogtoolslab/neurosketch/blob/master/analysis/notebooks/1_object_evidence_during_recognition.ipynb)
+
+2. [Measure Object Evidence on Drawing Run Data in Visual Cortex](https://github.com/cogtoolslab/neurosketch/blob/master/analysis/notebooks/2_object_evidence_during_production.ipynb)
+
+3. [Measure Patterns of Connectivity Between Early Visual and Parietal Regions](https://github.com/cogtoolslab/neurosketch/blob/master/analysis/notebooks/3_connectivity_pattern_during_drawing.ipynb)
 
