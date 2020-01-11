@@ -28,7 +28,8 @@ For full details, see Methods section of [paper]((https://www.jneurosci.org/cont
     Note: ALL OF THE OUTPUTS FROM THIS STAGE HAVE BEEN PROVIDED AND ARE 
     READILY AVAILABLE, SO THESE STEPS ARE NOT NECESSARY
     
-### Scanning parameters: For full information about scanning parameters, see: `https://github.com/cogtoolslab/neurosketch/blob/master/metadata/fmri_sequence_info/accel4_2x2x2mm_1500TR_OFFppf.pdf`
+### Scanning parameters: 
+For full information about scanning parameters, see: `https://github.com/cogtoolslab/neurosketch/blob/master/metadata/fmri_sequence_info/accel4_2x2x2mm_1500TR_OFFppf.pdf`
 
 ### INPUT:
 * DICOM archives for each subject: `data/raw/$SUBJ/raw.tar.gz`
