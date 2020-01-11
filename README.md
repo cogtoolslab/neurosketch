@@ -4,10 +4,8 @@ This repo contains the code used to produce the results in [Fan et al., Journal 
 
 1. [Abstract](#abstract)
 2. [Experimental procedure](#experimental-procedure)
-3. [Scanning parameters](#scanning-parameters)
-4. [fMRI data preprocessing](#fmri-data-preprocessing)
-5. [Input to main analyses](#input-to-main-analyses)
-6. [List of main analysis notebooks](#list-of-main-analysis-notebooks)
+3. [fMRI data preprocessing](#fmri-data-preprocessing)
+4. [Main analysis notebooks](#main-analyses)
 
 -----
 # Abstract
@@ -20,19 +18,17 @@ We found that: (1) stimulus-evoked representations of objects in visual cortex a
 Taken together, our study provides novel insight into the functional relationship between visual production and recognition in the brain.
 
 # Experimental procedure
-
+For full details, see Methods section of [paper]((https://www.jneurosci.org/content/early/2019/12/23/JNEUROSCI.1843-19.2019).
 - Each participant completed 10 runs in total: 2 (localizer recognition runs) + 2 (pre recognition runs) + 4 (drawing runs) + 2 (post recognition runs)
 - There were 4 3D objects used in this study: bed, bench chair, table.
 - During recognition runs, participants viewed each object 20 times per run (stimulus duration = 1000ms). 
 - During production runs, participants drew two objects in alternating sequence. Each drawing trial lasted 23 TR (each TR = 1.5s).
 
-# Scanning parameters
-
-For full information about scanning parameters, see: `/metadata/fmri_sequence_info`
-
 # fMRI data preprocessing
     Note: ALL OF THE OUTPUTS FROM THIS STAGE HAVE BEEN PROVIDED AND ARE 
     READILY AVAILABLE, SO THESE STEPS ARE NOT NECESSARY
+    
+### Scanning parameters: For full information about scanning parameters, see: `https://github.com/cogtoolslab/neurosketch/blob/master/metadata/fmri_sequence_info/accel4_2x2x2mm_1500TR_OFFppf.pdf`
 
 ### INPUT:
 * DICOM archives for each subject: `data/raw/$SUBJ/raw.tar.gz`
@@ -140,8 +136,9 @@ All in anatomical space
     Note: path on jukebox (accessible via Spock) is: `/jukebox/ntb/projects/sketchloop02/data`
 -->
 
-# Input to main analyses
+# Main analyses
 
+### Input to main analysis
 There is a master DATA dir containing all processed fMRI data in standard format:
 * `DATA/features` contains all feature matrices and metadata from all phases, ROIs, and subjects.
 	* `DATA/features/drawing` includes drawing filtered func data (represented as .npy feature matrices) + corresponding metadata from full freesurfer anatomical ROIs.
@@ -153,7 +150,7 @@ There is a master DATA dir containing all processed fMRI data in standard format
 
 **Link to download data will be provided here soon.**
 
-# List of main analysis notebooks
+### List of main analysis notebooks
 
 Link to [analysis notebooks](https://github.com/cogtoolslab/neurosketch/tree/master/analysis/notebooks).
 
