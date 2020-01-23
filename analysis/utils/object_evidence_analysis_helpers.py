@@ -756,9 +756,9 @@ def plot_summary_timecourse(ALLDM,
     '''    
     
     subs = np.unique(ALLDM.subj.values)
-    lookup = dict(zip(['trial_num','run_num','time_point'],['repetition','run','TR']))
+    lookup = dict(zip(['trial_num','run_num','TR_num'],['repetition','run','TR_num']))
 
-    ivs=['run_num','trial_num','time_point']
+    ivs=['run_num','trial_num','TR_num']
     assert this_iv in ivs    
     
 
@@ -772,7 +772,7 @@ def plot_summary_timecourse(ALLDM,
         Sub = []
         for sub in subs:
             inds = (ALLDM['roi']==this_roi) & (ALLDM['subj']==sub) if this_roi != 'VGG' else (ALLDM['roi']==this_roi) & (ALLDM['subj']==sub) & (ALLDM['time_point'] == 23)
-            t,f,c = get_prob_timecourse(this_iv,ALLDM[inds],version=version)
+            t,f,c = get_prob_timecourse(this_iv, ALLDM[inds], version=version)
             if baseline_correct:
                 t = t - t[0]
                 f = f - f[0]
@@ -807,7 +807,7 @@ def plot_summary_timecourse(ALLDM,
             x.columns = ['probability',lookup[this_iv],'condition','sub']
             toop = 'condition'            
         else:
-            ## make longform version of dataframe to use in tsplot (difference btw conditions)                    
+            # make longform version of dataframe to use in tsplot (difference btw conditions)
             Trial = np.tile(np.arange(len(t)),len(subs)*3)
             Condition = np.repeat(['target-foil','target-control','foil-control'],len(T))
             Sub = np.tile(np.array(flatten(Sub)),3)
@@ -819,10 +819,9 @@ def plot_summary_timecourse(ALLDM,
             x = x.transpose()
             x.columns = ['probability',lookup[this_iv],'condition','sub']        
             toop = 'difference'
-        #print(x)   
         fig = plt.figure(figsize=(8,4)) 
         plt.subplot(111)
-        ## plot it
+        # plot it
         color_picker = ['#dd4318','#0d61c6','#4a4b4c']
         sns.set_palette(color_picker)
         x['timePlusOne'] = x[lookup[this_iv]].apply(lambda x: x+1)
@@ -852,8 +851,6 @@ def plot_summary_timecourse(ALLDM,
         plt.tight_layout(rect=[0,0,1,0.7])
         plt.savefig(os.path.join(plot_dir,'{}/{}/{}/prob_timecourse_{}_by_{}_{}.pdf'.\
                     format(nb_name,lookup[this_iv],toop,this_roi,lookup[this_iv],version)))
-        #print('save path = {}'.format(os.path.join(plot_dir,'{}/{}/{}/prob_timecourse_{}_by_{}_{}.pdf'.\
-        #           format(nb_name,lookup[this_iv],toop,this_roi,lookup[this_iv],version))))
         plt.close(fig)    
 
         
@@ -884,7 +881,7 @@ def get_log_odds(ALLDM,
     roi = []
     
     subs = np.unique(ALLDM['subj'].values)
-    lookup = dict(zip(['trial_num','run_num','time_point'],['repetition','run','TR']))
+    lookup = dict(zip(['trial_num','run_num','TR_num'],['repetition','run','TR_num']))
     
     for this_roi in roi_list:
         T = []
