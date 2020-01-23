@@ -36,14 +36,13 @@ plot_dir = os.path.join(proj_dir,'results','plots')
 def load_draw_meta(this_sub):
     this_file = 'metadata_{}_drawing.csv'.format(this_sub)
     x = pd.read_csv(os.path.join(path_to_draw,this_file))
-    x = x.drop(['Unnamed: 0', 'Unnamed: 0.1'], axis=1)
+    x = x.drop(['Unnamed: 0'], axis=1)
     x['trial_num'] = np.repeat(np.arange(40),23)
     return x
 
 def load_draw_feats(this_sub,this_roi):
     this_file = '{}_{}_featurematrix.npy'.format(this_sub,this_roi)
     y = np.load(os.path.join(path_to_draw,this_file))
-    y = y.transpose()
     return y
 
 def load_draw_data(this_sub,this_roi):
@@ -61,7 +60,6 @@ def load_recog_meta(this_sub,this_roi,this_phase):
 def load_recog_feats(this_sub,this_roi,this_phase):
     this_file = '{}_{}_{}_featurematrix.npy'.format(this_sub,this_roi,this_phase)
     y = np.load(os.path.join(path_to_recog,this_file))
-    y = y.transpose()
     return y
 
 def load_recog_data(this_sub,this_roi,this_phase):
@@ -485,12 +483,6 @@ def make_prepostrecog_predictions_withinphase(sub_list,
     assumes: that you have directories containing recognition run and drawing run data, consisting of paired .npy
                 voxel matrices and .csv metadata matrices
     '''
-
-    ## Handle slightly different naming for same ROIs in the drawing/recog data directories
-
-    # ROI labels in the recog data directory
-    roi_list_recog = np.array(['V1Draw', 'V2Draw', 'LOCDraw', 'ParietalDraw', 
-                         'supraMarginalDraw', 'postCentralDraw', 'preCentralDraw', 'FrontalDraw'])
   
     # initialize "All Data Matrix"
     ALLDM = []
@@ -505,8 +497,10 @@ def make_prepostrecog_predictions_withinphase(sub_list,
             RM12, RF12 = load_recog_data(this_sub,this_roi,'12')
             if test_phase=='pre':
                 RM, RF = load_recog_data(this_sub,this_roi,'34')
+                relruns = [3,4]
             elif test_phase=='post':
-                RM, RF = load_recog_data(this_sub,this_roi,'56')            
+                RM, RF = load_recog_data(this_sub,this_roi,'56')
+                relruns = [5,6]
             else:
                 print('Invalid test split, test_phase should be either "pre" or "post." ')
 
@@ -514,7 +508,7 @@ def make_prepostrecog_predictions_withinphase(sub_list,
             _acc = []
             for name, group in RM.groupby('run_num'):
                 print('Now analyzing {} from {} ...'.format(this_roi, this_sub))    
-                print('train run: {}, test run: {}'.format(name, np.setdiff1d([1,2],name)[0]))
+                print('train run: {}, test run: {}'.format(name, np.setdiff1d(relruns,name)[0]))
                 clear_output(wait=True)
 
                 ## train/test split by run
@@ -527,8 +521,8 @@ def make_prepostrecog_predictions_withinphase(sub_list,
                     RFtrain = np.vstack((RFtrain,RF12))
                     ## print(RMtrain.shape, RFtrain.shape)
                 
-                RMtest = RM[RM['run_num']==np.setdiff1d([1,2],name)[0]] 
-                RFtest = RF[RMtest.index,:]
+                RMtest = RM[RM['run_num'] == np.setdiff1d(relruns,name)[0]]
+                RFtest = RF[RMtest.index, :]
 
                 # identify control objects (the only use of DM in this function)
                 trained_objs = np.unique(DM.label.values)
