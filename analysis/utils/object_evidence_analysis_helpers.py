@@ -937,7 +937,7 @@ def get_log_odds(ALLDM,
             roi.append(this_roi)
 
         ## save out big dataframe with all subjects and timepoints
-        x.to_csv(os.path.join(proj_dir, 'csv/roi/object_classifier_logprobs_{}_{}_{}.csv'.format(phase,this_roi,this_iv)),index=False)
+        x.to_csv(os.path.join(proj_dir, 'results/csv/object_classifier_logprobs_{}_{}_{}.csv'.format(phase,this_roi,this_iv)),index=False)
 
     ## make dataframe with subject-level difference scores
     substr = [str(i).zfill(7) for i in subs]
@@ -952,10 +952,10 @@ def get_log_odds(ALLDM,
     ## output target-foil ratios
     if logged==True:
         print(d.groupby('roi')['target-foil'].apply(lambda x: np.mean(np.exp(x))))
-        d.to_csv(os.path.join(proj_dir, 'csv/object_classifier_logodds_{}.csv'.format(phase)),index=False)
+        d.to_csv(os.path.join(proj_dir, 'results/csv/object_classifier_logodds_{}.csv'.format(phase)),index=False)
     else:
         print(d.groupby('roi')['target-foil'].mean())
-        d.to_csv(os.path.join(proj_dir, 'csv/object_classifier_rawprobs_{}.csv'.format(phase)),index=False)
+        d.to_csv(os.path.join(proj_dir, 'results/csv/object_classifier_rawprobs_{}.csv'.format(phase)),index=False)
         
     return d        
         
