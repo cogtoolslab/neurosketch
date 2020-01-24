@@ -1162,6 +1162,7 @@ def get_ci_bounds(x):
     ub = np.round(np.percentile(x,97.5),5)
     return (lb,ub)
 
+
 def make_drawing_connectivity_predictions(sub_list, roi_list, version='phase', feature_type='connect', logged=True):
     
     '''
@@ -1182,10 +1183,10 @@ def make_drawing_connectivity_predictions(sub_list, roi_list, version='phase', f
     Acc = []
     all_pairs = list(itertools.combinations(roi_list, 2))
     for (this_roi, that_roi) in all_pairs:
-        print('Now analyzing {}, {} ...'.format(this_roi, that_roi))
         acc = []
         for this_sub in sub_list:
-            print(this_sub)
+            print('Now analyzing ROIs: {}/{} from subject: {} ...'.format(this_roi, that_roi, this_sub))
+            clear_output(wait=True)
             ## load subject data in
             DM, DF = load_connect_data(this_sub, str(this_roi)+'_'+str(that_roi), feature_type)
 
@@ -1268,10 +1269,22 @@ def get_connect_timecourse(iv,DM):
     
     t1 = trained_objs[0]
     t2 = trained_objs[1]
-    target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
-                        DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse
-    foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
-                      DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
+    if iv == 'trials':
+        tr1 = DM[DM.label == t1]['t1_prob'].values
+        tr2 = DM[DM.label == t2]['t2_prob'].values  ## target timecourse
+        target = np.empty((tr1.size + tr2.size,))
+        target[0::2] = tr1
+        target[1::2] = tr2
+        f1 = DM[DM.label == t1]['t2_prob'].values
+        f2 = DM[DM.label == t2]['t1_prob'].values  ## target timecourse
+        foil = np.empty((f1.size + f2.size,))
+        foil[0::2] = f1
+        foil[1::2] = f2
+    else:
+        target = np.vstack((DM[DM.label==t1].groupby(iv)['t1_prob'].mean().values,
+                            DM[DM.label==t2].groupby(iv)['t2_prob'].mean().values)).mean(0) ## target timecourse
+        foil = np.vstack((DM[DM.label==t1].groupby(iv)['t2_prob'].mean().values,
+                          DM[DM.label==t2].groupby(iv)['t1_prob'].mean().values)).mean(0) ## foil timecourse
     return target, foil
 
 def plot_connect_timecourse(ALLDM, 
@@ -1283,7 +1296,7 @@ def plot_connect_timecourse(ALLDM,
                             logged=True,
                             proj_dir='../',
                             baseline_correct=False,
-                            nb_name='4_connectivity_pattern_during_drawing',
+                            nb_name='3_connectivity_pattern_during_drawing',
                             plotType='bar'):
     '''
     input: 
@@ -1303,9 +1316,9 @@ def plot_connect_timecourse(ALLDM,
     
     subs = np.unique(ALLDM.subj.values)
 
-    lookup = dict(zip(['trial_num','run_num','phase_num'],['repetition','run','phase']))
+    lookup = dict(zip(['trials', 'rep_num','run_num','phase_num'],['trials','repetition','run','phase']))
 
-    ivs=['run_num','trial_num', 'phase_num']
+    ivs=['trials', 'run_num', 'rep_num', 'phase_num']
     assert this_iv in ivs    
     all_pairs = list(itertools.combinations(roi_list, 2))
 
@@ -1349,7 +1362,7 @@ def plot_connect_timecourse(ALLDM,
             x.columns = ['probability',lookup[this_iv],'condition','sub']
             toop = 'condition'            
         else:
-            ## make longform version of dataframe to use in tsplot (difference btw conditions)                    
+            # make longform version of dataframe to use in tsplot (difference btw conditions)
             Trial = np.tile(np.arange(len(t)),len(subs))
             Condition = np.repeat(['Target - Foil'],len(T))
             Sub = np.tile(np.array(flatten(Sub)),1)
@@ -1361,7 +1374,7 @@ def plot_connect_timecourse(ALLDM,
             x = x.transpose()
             x.columns = ['probability',lookup[this_iv],'condition','sub']        
             toop = 'difference'
-            x.to_csv('{}/{}_{}_{}_{}.csv'.format(results_dir, feature_type, this_roi, that_roi, version))
+            x.to_csv('{}/{}_{}_{}_{}.csv'.format(results_dir, feature_type, this_roi, that_roi, lookup[this_iv]))
         fig, ax = plt.subplots(figsize=(5, 5))
         ## plot it
         if plotType == 'line':
@@ -1396,7 +1409,7 @@ def plot_connect_timecourse(ALLDM,
             plt.ylim(-3,-0.5)
             plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=3, mode="expand", borderaxespad=0.)  
         else:
-            plt.ylim(0,2)
+            plt.ylim(0,1.5)
             plt.yticks(np.arange(0, 1.6, 0.5), np.arange(0, 1.6, 0.5), fontsize=20, **{'fontname':'Arial Narrow'})
             plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=3, mode="expand", borderaxespad=0., fontsize=20)                        
         plt.xlabel('Phase Number', fontsize=20, **{'fontname':'Arial Narrow'})
