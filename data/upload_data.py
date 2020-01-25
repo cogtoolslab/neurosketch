@@ -60,12 +60,12 @@ if __name__ == "__main__":
     for i, path_to_file in enumerate(data_paths):
         filename = path_to_file.split('/')[-1]
         dirname = path_to_file.split('/')[-2]
-        keyname = os.path.join(filename,dirname)
+        keyname = os.path.join(dirname,filename)
 
-        if ((check_exists(s3, bucket_name, keyname)==False) | (overwrite==True)):
+        if ((check_exists(s3, args.bucket_name, keyname)==False) | (overwrite==True)):
             print('Now uploading {} | {} of {}'.format(path_to_file.split('/')[-1],(i+1),len(data_paths)))
-            s3.Object(bucket_name,keyname).put(Body=open(path_to_file,'rb')) ## upload stimuli
-            s3.Object(bucket_name,keyname).Acl().put(ACL='public-read') ## set access controls
+            s3.Object(args.bucket_name,keyname).upload_file(path_to_file) ## upload stimuli
+            s3.Object(args.bucket_name,keyname).Acl().put(ACL='public-read') ## set access controls
         else: 
             print('Skipping {} | {} of {} because it already exists.'.format(path_to_file.split('/')[-1],(i+1),len(data_paths)))
 
