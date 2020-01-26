@@ -55,7 +55,7 @@ if __name__ == "__main__":
     for i, _r in enumerate(r):
       if not os.path.exists(os.path.join(path_to_data,'recog',_r.key)) or overwrite:
         print('Currently downloading {} | recog file {} of {}'.format(_r.key, i+1, len(r)))
-        s3.meta.client.download_file(bucket_name, _r.key, os.path.join('dltest',_r.key))
+        s3.meta.client.download_file(bucket_name, _r.key, os.path.join(path_to_data,_r.key))
       else:
         print('Already have {} | recog file {} of {}'.format(_r.key, i+1, len(r)))
 
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     for i, _d in enumerate(d):
       if not os.path.exists(os.path.join(path_to_data,'drawing',_d.key)) or overwrite:
         print('Currently downloading {} | drawing file {} of {}'.format(_d.key, i+1, len(d)))
-        s3.meta.client.download_file(bucket_name, _d.key, os.path.join('dltest',_d.key))
+        s3.meta.client.download_file(bucket_name, _d.key, os.path.join(path_to_data,_d.key))
       else:
         print('Already have {} | drawing file {} of {}'.format(_d.key, i+1, len(d)))
 
@@ -74,7 +74,7 @@ if __name__ == "__main__":
       for i, _c in enumerate(c):
         if not os.path.exists(os.path.join(path_to_data,'connect',_c.key)) or overwrite:
           print('Currently downloading {} | connect file {} of {}'.format(_c.key, i+1, len(c)))
-          s3.meta.client.download_file(bucket_name, _c.key, os.path.join('dltest',_c.key))
+          s3.meta.client.download_file(bucket_name, _c.key, os.path.join(path_to_data,_c.key))
         else:
           print('Already have {} | connect file {} of {}'.format(_c.key, i+1, len(c)))
 
