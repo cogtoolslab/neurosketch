@@ -6,7 +6,8 @@ from glob import glob
 import argparse
 
 '''
-To download data, use command:
+To download recog + drawing data (~5.2 GB total), use command: python download_data.py 
+To download recog + drawing + connect data (~95.2GB total), use command: python download_data.py --get_connectivity
 '''
 
 def str2bool(v):
@@ -78,5 +79,5 @@ if __name__ == "__main__":
         else:
           print('Already have {} | connect file {} of {}'.format(_c.key, i+1, len(c)))
 
-
-
+  else:
+    print('We already have a complete local dataset. No need to initiate download from S3.')
