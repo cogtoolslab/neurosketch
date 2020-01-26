@@ -54,7 +54,7 @@ if __name__ == "__main__":
     ## get recog data
     r = list(b.objects.filter(Prefix='recog/'))
     for i, _r in enumerate(r):
-      if overwrite or not os.path.exists(os.path.join(path_to_data,'recog',_r.key)):
+      if overwrite==True  or os.path.exists(os.path.join(path_to_data,'recog',_r.key))==False:
         print('Currently downloading {} | recog file {} of {}'.format(_r.key, i+1, len(r)))
         s3.meta.client.download_file(bucket_name, _r.key, os.path.join(path_to_data,_r.key))
       else:
@@ -63,7 +63,7 @@ if __name__ == "__main__":
     ## get drawing data
     d = list(b.objects.filter(Prefix='drawing/'))
     for i, _d in enumerate(d):
-      if overwrite or not os.path.exists(os.path.join(path_to_data,'drawing',_d.key)):
+      if overwrite==True or os.path.exists(os.path.join(path_to_data,'drawing',_d.key))==False:
         print('Currently downloading {} | drawing file {} of {}'.format(_d.key, i+1, len(d)))
         s3.meta.client.download_file(bucket_name, _d.key, os.path.join(path_to_data,_d.key))
       else:
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     if get_connectivity: 
       c = list(b.objects.filter(Prefix='connect/'))
       for i, _c in enumerate(c):
-        if overwrite or not os.path.exists(os.path.join(path_to_data,'connect',_c.key)):
+        if overwrite==True  or os.path.exists(os.path.join(path_to_data,'connect',_c.key))==False:
           print('Currently downloading {} | connect file {} of {}'.format(_c.key, i+1, len(c)))
           s3.meta.client.download_file(bucket_name, _c.key, os.path.join(path_to_data,_c.key))
         else:
