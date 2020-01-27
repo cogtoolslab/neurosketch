@@ -149,7 +149,13 @@ There is a master DATA dir containing all processed fMRI data in standard format
 	* `DATA/copes/recog/objectGLM` recognition cope maps from object GLM
 	* `DATA/copes/draw/taskGLM` drawing cope maps from drawing_task GLM
 
-**Link to download data will be provided here soon.**
+#### Download preprocessed data 
+1. Clone this repo.
+2. Navigate to the `data/` directory.
+3. From the command line, run `python download_data.py`. 
+	- Note that you may first need to install [`boto3`](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html). 
+	- By default, `download_data.py` will only download the `recog` and `drawing` data, which combined will occupy around 5.2 GB disk space. 
+	- To also download the connectivity data, set the `get_connectivity` flag to `True` when running the `download_data.py` script, i.e.: `python download_data.py --get_connectivity=True`.
 
 ### List of main analysis notebooks
 
