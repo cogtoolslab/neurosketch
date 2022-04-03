@@ -20,7 +20,7 @@ Taken together, our study provides novel insight into the functional relationshi
 # Experimental procedure
 For full details, see Methods section of [paper]((https://www.jneurosci.org/content/early/2019/12/23/JNEUROSCI.1843-19.2019).
 - Each participant completed 10 runs in total: 2 (localizer recognition runs) + 2 (pre recognition runs) + 4 (drawing runs) + 2 (post recognition runs)
-- There were 4 3D objects used in this study: bed, bench chair, table.
+- There were 4 3D objects used in this study: bed, bench chair, table. The images used were a subset of the furniture morphs used in [Fan et al. (2018)](https://cogtoolslab.github.io/pdf/fan_cs_2018.pdf). To download a zipped folder containing the full furniture stimulus set from which the images used in this study were subsetted, please click this [link](https://sketchloop-furniture-morphs.s3.amazonaws.com/sketchloop-furniture-morphs.tar.gz) _(622MB)_.
 - During recognition runs, participants viewed each object 20 times per run (stimulus duration = 1000ms). 
 - During production runs, participants drew two objects in alternating sequence. Each drawing trial lasted 23 TR (each TR = 1.5s).
 
